@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button, ButtonGroup, Card, Form, Stack } from "react-bootstrap";
+import { EmptyState } from "../components/common.jsx";
 import { asistenciaEstados, getToday } from "../utils/constants.js";
 import { badgeVariant, etiquetaEstado, normalizarEstado } from "../utils/formatters.js";
 
@@ -48,7 +49,7 @@ export function Attendance({ data, setData, visibleTalleres, selectedDate, setSe
     setSavedNotice(`Asistencia guardada para ${seleccionados.length} alumno/s.`);
   };
 
-  if (!taller) return <Card><Card.Body>Sin talleres visibles.</Card.Body></Card>;
+  if (!taller) return <Card><Card.Body><EmptyState title="Sin talleres visibles" text="No tenes talleres disponibles para cargar asistencia." /></Card.Body></Card>;
 
   const pendingCount = Object.keys(draft).filter((key) => key.startsWith(`${taller.id}-${selectedDate}-`)).length;
   const lockedCount = inscriptos.filter((ins) => existingRecord(ins.alumnoId)).length;
@@ -91,6 +92,7 @@ export function Attendance({ data, setData, visibleTalleres, selectedDate, setSe
             </Card>
           );
         })}
+        {!inscriptos.length ? <EmptyState title="Sin alumnos activos" text="Este taller no tiene alumnos activos para tomar asistencia." /> : null}
       </Stack>
       <div className="attendance-savebar">
         <span>{pendingCount ? `${pendingCount} cambio/s sin guardar` : `${emptyCount} alumno/s disponibles para cargar hoy`}</span>

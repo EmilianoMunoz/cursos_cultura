@@ -31,6 +31,8 @@ export default function App() {
   const [workshopModal, setWorkshopModal] = useState({ show: false, taller: null });
   const [studentModal, setStudentModal] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmFinalize, setConfirmFinalize] = useState(null);
+  const [searchNotice, setSearchNotice] = useState("");
 
   const role = currentUser?.role || "Administrador";
   const allowed = permissions[role] || [];
@@ -76,7 +78,11 @@ export default function App() {
 
   const login = (user) => {
     setCurrentUser(user);
-    const nextView = user.role === "Docente" && talleresConAsistenciaPendiente(data, user, selectedDate).length ? "asistencia" : "dashboard";
+    const nextView = user.role === "Alumno"
+      ? "talleres"
+      : user.role === "Docente" && talleresConAsistenciaPendiente(data, user, selectedDate).length
+        ? "asistencia"
+        : "dashboard";
     setView(nextView);
   };
 
@@ -97,6 +103,7 @@ export default function App() {
     if (!taller) return;
     setData((prev) => ({ ...prev, talleres: prev.talleres.map((t) => (t.id === id ? { ...t, estado: "Finalizado" } : t)) }));
     pushHistory("Taller", "UPDATE", taller, { ...taller, estado: "Finalizado" });
+    setConfirmFinalize(null);
   };
 
   const deleteWorkshop = (id) => {
@@ -109,6 +116,17 @@ export default function App() {
     }));
     pushHistory("Taller", "DELETE", taller, null);
     setConfirmDelete(null);
+  };
+
+  const saveStudent = (updated) => {
+    const previous = data.alumnos.find((a) => a.id === updated.id);
+    if (!previous) return;
+    setData((prev) => ({
+      ...prev,
+      alumnos: prev.alumnos.map((a) => (a.id === updated.id ? updated : a))
+    }));
+    pushHistory("Alumno", "UPDATE", previous, updated);
+    setStudentModal(updated);
   };
 
   const reportRows = () => data.asistencias.filter((a) => {
@@ -146,8 +164,21 @@ export default function App() {
 
   const openStudentFromSearch = (value) => {
     const q = value.trim().toLowerCase();
-    const alumno = visibleAlumnos.find((a) => `${a.dni} ${a.nombre} ${a.apellido} ${a.email}`.toLowerCase().includes(q));
-    if (alumno) setStudentModal(alumno);
+    if (!q) return;
+    const alumno = visibleAlumnos.find((a) => {
+      const talleres = data.inscripciones
+        .filter((i) => i.alumnoId === a.id && i.estado === "Activo")
+        .map((i) => data.talleres.find((t) => t.id === i.tallerId)?.nombre || "")
+        .join(" ");
+      return `${a.dni} ${a.nombre} ${a.apellido} ${a.email} ${a.telefono} ${talleres}`.toLowerCase().includes(q);
+    });
+    if (alumno) {
+      setStudentModal(alumno);
+      setSearchNotice("");
+      return;
+    }
+    setSearchNotice("No se encontro un alumno visible con ese dato.");
+    window.setTimeout(() => setSearchNotice(""), 3200);
   };
 
   return (
@@ -156,17 +187,18 @@ export default function App() {
         <Container fluid="xl">
           <Navbar.Brand className="brand-block">
             <img src={logoMuni} alt="Municipalidad de San Rafael" />
-            <span><strong>Sistema Punto Digital</strong><small>Municipalidad de San Rafael</small></span>
+            <span><strong>Cursos Dirección de Cultura</strong><small>Municipalidad de San Rafael</small></span>
           </Navbar.Brand>
           <Navbar.Toggle aria-controls="main-nav" />
           <Navbar.Collapse id="main-nav">
             <Form className="global-search ms-lg-auto my-2 my-lg-0" onSubmit={(e) => { e.preventDefault(); openStudentFromSearch(e.currentTarget.elements.studentSearch.value); e.currentTarget.reset(); }}>
-              <Form.Control name="studentSearch" list="students-list" placeholder="Buscar alumno por DNI o nombre" />
+              <Form.Control name="studentSearch" list="students-list" placeholder="Buscar alumno, DNI, telefono o taller" />
               <datalist id="students-list">{visibleAlumnos.map((a) => <option key={a.id} value={`${a.dni} ${a.nombre} ${a.apellido}`} />)}</datalist>
+              {searchNotice ? <div className="global-search-notice">{searchNotice}</div> : null}
             </Form>
             <Stack direction="horizontal" gap={2} className="ms-lg-3 align-items-center flex-wrap">
               <div className="session-pill"><span>{currentUser.nombre}</span><small>{currentUser.role}</small></div>
-              <Button size="sm" variant="outline-light" onClick={exportExcel}>Exportar</Button>
+              {role !== "Alumno" ? <Button size="sm" variant="outline-light" onClick={exportExcel}>Exportar</Button> : null}
               <Button size="sm" variant="light" onClick={() => setCurrentUser(null)}>Salir</Button>
             </Stack>
           </Navbar.Collapse>
@@ -184,8 +216,8 @@ export default function App() {
         </aside>
         <main className="content-shell">
           {view === "dashboard" && <Dashboard data={data} role={role} currentUser={currentUser} visibleTalleres={visibleTalleres} visibleAlumnos={visibleAlumnos} selectedDate={selectedDate} docenteName={docenteName} setView={setView} />}
-          {view === "talleres" && <Workshops data={data} talleres={visibleTalleres} selectedDate={selectedDate} setSelectedDate={setSelectedDate} query={workshopQuery} setQuery={setWorkshopQuery} docenteName={docenteName} />}
-          {view === "gestionTalleres" && <WorkshopManagement data={data} docenteName={docenteName} selectedDate={selectedDate} onCreate={() => setWorkshopModal({ show: true, taller: null })} onEdit={(taller) => setWorkshopModal({ show: true, taller })} onFinalize={finalizeWorkshop} onDelete={setConfirmDelete} />}
+          {view === "talleres" && <Workshops data={data} talleres={visibleTalleres} selectedDate={selectedDate} setSelectedDate={setSelectedDate} query={workshopQuery} setQuery={setWorkshopQuery} docenteName={docenteName} role={role} currentUser={currentUser} />}
+          {view === "gestionTalleres" && <WorkshopManagement data={data} docenteName={docenteName} selectedDate={selectedDate} onCreate={() => setWorkshopModal({ show: true, taller: null })} onEdit={(taller) => setWorkshopModal({ show: true, taller })} onFinalize={setConfirmFinalize} onDelete={setConfirmDelete} />}
           {view === "docentes" && <Teachers data={data} setData={setData} pushHistory={pushHistory} />}
           {view === "alumnos" && <Students data={data} visibleAlumnos={visibleAlumnos} visibleTalleres={visibleTalleres} query={studentQuery} setQuery={setStudentQuery} setData={setData} pushHistory={pushHistory} openStudent={setStudentModal} />}
           {view === "asistencia" && <Attendance data={data} setData={setData} visibleTalleres={visibleTalleres} selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTaller={selectedAttendanceTaller} setSelectedTaller={setSelectedAttendanceTaller} pushHistory={pushHistory} />}
@@ -205,7 +237,7 @@ export default function App() {
 
       <Modal show={Boolean(studentModal)} onHide={() => setStudentModal(null)} size="lg" centered>
         <Modal.Header closeButton><Modal.Title>{studentModal ? `${studentModal.nombre} ${studentModal.apellido}` : "Alumno"}</Modal.Title></Modal.Header>
-        <Modal.Body>{studentModal ? <StudentProfile alumno={studentModal} data={data} /> : null}</Modal.Body>
+        <Modal.Body>{studentModal ? <StudentProfile alumno={studentModal} data={data} onSave={saveStudent} canEdit={role !== "Alumno"} /> : null}</Modal.Body>
       </Modal>
 
       <Modal show={Boolean(confirmDelete)} onHide={() => setConfirmDelete(null)} centered>
@@ -214,6 +246,15 @@ export default function App() {
         <Modal.Footer>
           <Button variant="outline-secondary" onClick={() => setConfirmDelete(null)}>Cancelar</Button>
           <Button variant="danger" onClick={() => deleteWorkshop(confirmDelete?.id)}>Eliminar</Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={Boolean(confirmFinalize)} onHide={() => setConfirmFinalize(null)} centered>
+        <Modal.Header closeButton><Modal.Title>Finalizar taller</Modal.Title></Modal.Header>
+        <Modal.Body>El taller quedara marcado como finalizado y dejara de aparecer como activo.</Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setConfirmFinalize(null)}>Cancelar</Button>
+          <Button variant="warning" onClick={() => finalizeWorkshop(confirmFinalize?.id)}>Finalizar</Button>
         </Modal.Footer>
       </Modal>
     </>

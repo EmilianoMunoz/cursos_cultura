@@ -22,7 +22,7 @@ No requiere backend para esta version demo.
 4. Abrir la URL local que muestra Vite.
 5. Cambiar de rol usando los botones provisorios de login.
 
-
+                        
 ## Notas
 
 - Es una version de frontend/demo sin base de datos real.

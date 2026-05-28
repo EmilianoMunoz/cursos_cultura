@@ -46,3 +46,13 @@ export function MiniBar({ label, value, total, variant = "info" }) {
     </div>
   );
 }
+
+export function EmptyState({ title = "Sin resultados", text = "No hay datos para mostrar con los filtros actuales.", action }) {
+  return (
+    <div className="empty-state">
+      <strong>{title}</strong>
+      <span>{text}</span>
+      {action || null}
+    </div>
+  );
+}

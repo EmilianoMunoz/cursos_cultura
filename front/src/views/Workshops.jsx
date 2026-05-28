@@ -1,10 +1,53 @@
 import React from "react";
 import { Card, Col, Form, Row } from "react-bootstrap";
-import { HorarioChips, MiniBar, StatusBadges } from "../components/common.jsx";
-import { normalizarEstado } from "../utils/formatters.js";
+import { EmptyState, HorarioChips, MiniBar, StatusBadges } from "../components/common.jsx";
+import { diasTexto, etiquetaEstado, normalizarEstado } from "../utils/formatters.js";
 
-export function Workshops({ data, talleres, selectedDate, setSelectedDate, query, setQuery, docenteName }) {
+export function Workshops({ data, talleres, selectedDate, setSelectedDate, query, setQuery, docenteName, role, currentUser }) {
   const filtered = talleres.filter((t) => t.estado === "Activo" && `${t.nombre} ${t.tipo} ${t.distrito} ${docenteName(t.docenteId)}`.toLowerCase().includes(query.toLowerCase()));
+  if (role === "Alumno") {
+    const alumno = data.alumnos.find((a) => a.id === currentUser?.alumnoId);
+    return (
+      <Card className="workshops-panel"><Card.Body>
+        <div className="section-head workshops-head">
+          <div>
+            <p className="eyebrow">Mis cursos</p>
+            <h2>{alumno ? `${alumno.nombre} ${alumno.apellido}` : "Curso actual e historial"}</h2>
+            <p className="text-muted mb-0">Consulta simple de cursada actual y asistencias registradas.</p>
+          </div>
+        </div>
+        <Row className="g-3">{filtered.map((t) => {
+          const registros = data.asistencias
+            .filter((a) => a.tallerId === t.id && a.alumnoId === currentUser?.alumnoId)
+            .sort((a, b) => b.fecha.localeCompare(a.fecha));
+          const presentes = registros.filter((a) => normalizarEstado(a.estadoAsistencia) === "Presente").length;
+          return (
+            <Col md={6} xl={4} key={t.id}>
+              <Card className="h-100 workshop-card">
+                <Card.Body>
+                  <Card.Title>{t.nombre}</Card.Title>
+                  <p className="text-muted small">{t.tipo} · {t.distrito}</p>
+                  <HorarioChips taller={t} />
+                  <p className="workshop-meta">{docenteName(t.docenteId)} <span>{diasTexto(t)}</span></p>
+                  <p className="student-course-ratio"><strong>{presentes}</strong><span>/{registros.length || 0} presentes</span></p>
+                  <MiniBar label="Presentes" value={presentes} total={registros.length || 1} variant="ok" />
+                  <div className="attendance-history-list mt-3">
+                    <div className="attendance-history-course">
+                      <strong>Historial</strong>
+                      {registros.slice(0, 10).map((reg) => <span key={`${reg.fecha}-${reg.estadoAsistencia}`}>{reg.fecha} · {etiquetaEstado(reg.estadoAsistencia)}</span>)}
+                      {!registros.length ? <span>Sin registros cargados.</span> : null}
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          );
+        })}
+        {!filtered.length ? <Col><EmptyState title="Sin cursos activos" text="No hay cursos activos asociados a este alumno." /></Col> : null}
+        </Row>
+      </Card.Body></Card>
+    );
+  }
   return (
     <Card className="workshops-panel"><Card.Body>
       <div className="section-head workshops-head">
@@ -51,7 +94,9 @@ export function Workshops({ data, talleres, selectedDate, setSelectedDate, query
             </Card>
           </Col>
         );
-      })}</Row>
+      })}
+      {!filtered.length ? <Col><EmptyState title="Sin talleres" text="No hay talleres activos para la busqueda seleccionada." /></Col> : null}
+      </Row>
     </Card.Body></Card>
   );
 }

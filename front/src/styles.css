@@ -181,6 +181,7 @@ strong {
 }
 
 .global-search {
+  position: relative;
   width: min(330px, 30vw);
 }
 
@@ -193,6 +194,21 @@ strong {
 
 .global-search .form-control::placeholder {
   color: rgba(255, 255, 255, 0.72);
+}
+
+.global-search-notice {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 30;
+  width: min(320px, 90vw);
+  border: 1px solid #f0c2bc;
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  background: #fff4f2;
+  color: #9c2d23;
+  font-size: 0.86rem;
+  box-shadow: 0 10px 22px rgba(15, 31, 45, 0.18);
 }
 
 .session-pill {
@@ -285,11 +301,86 @@ strong {
   padding: 1.5rem;
 }
 
+.auth-kicker {
+  margin: 0 0 0.35rem;
+  color: rgba(255, 255, 255, 0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.auth-logo-wrap {
+  margin-top: 1rem;
+}
+
 .auth-brand img {
   width: min(220px, 100%);
   border-radius: 10px;
   background: #fff;
-  margin-top: 1rem;
+}
+
+.auth-main {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem !important;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+  padding: 0.3rem;
+  border: 1px solid #d8e5f2;
+  border-radius: 12px;
+  background: #f5f9fd;
+}
+
+.auth-tab {
+  border: 0;
+  color: var(--institutional-blue-dark);
+  font-weight: 700;
+}
+
+.auth-tab.active {
+  background: var(--institutional-blue);
+  color: #fff;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.auth-form h2 {
+  margin: 0 0 0.15rem;
+}
+
+.demo-login-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.demo-login-actions .btn {
+  width: 100%;
+}
+
+.auth-demo,
+.auth-error {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.auth-demo {
+  color: #5e7188;
+  border-top: 1px dashed #d7e2ec;
+  padding-top: 0.45rem;
+}
+
+.auth-error {
+  color: #b42318;
+  font-weight: 700;
 }
 
 .eyebrow {
@@ -525,6 +616,80 @@ strong {
   margin-top: 1rem;
 }
 
+.section-head.compact {
+  margin-bottom: 0.85rem;
+}
+
+.section-head.compact h3 {
+  margin: 0;
+}
+
+.student-edit-form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.form-error {
+  border: 1px solid #f0c2bc;
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  background: #fff4f2;
+  color: #9c2d23;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.student-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.75fr) minmax(220px, 1fr);
+  gap: 0.55rem;
+  width: min(520px, 100%);
+}
+
+.attendance-history-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.attendance-history-course {
+  display: grid;
+  gap: 0.3rem;
+  border: 1px solid #d8e5f2;
+  border-radius: 10px;
+  padding: 0.7rem;
+  background: #fbfdff;
+}
+
+.attendance-history-course strong {
+  color: var(--institutional-blue-dark);
+}
+
+.attendance-history-course span {
+  color: #5e7188;
+  font-size: 0.9rem;
+}
+
+.student-course-ratio {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin: 0;
+  color: var(--muted);
+}
+
+.student-course-ratio strong {
+  color: var(--institutional-blue-dark);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.audit-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(145px, 0.75fr) minmax(150px, 0.9fr) minmax(145px, 0.8fr);
+  gap: 0.55rem;
+  width: min(820px, 100%);
+}
+
 .history-list {
   display: grid;
   gap: 0.65rem;
@@ -578,6 +743,30 @@ strong {
   margin: 0 0 0.75rem;
   color: var(--institutional-blue-dark);
   font-size: 1.05rem;
+}
+
+.dashboard-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.dashboard-panel-head .dashboard-panel-title {
+  margin-bottom: 0;
+}
+
+.dashboard-panel-head span {
+  color: #5e7188;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.daily-scroll {
+  max-height: 440px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
 .daily-item {
@@ -895,6 +1084,11 @@ strong {
     width: 100%;
   }
 
+  .global-search-notice {
+    left: 0;
+    right: auto;
+  }
+
   .session-pill {
     width: 100%;
     min-width: 0;
@@ -929,6 +1123,10 @@ strong {
     padding: 1.1rem !important;
   }
 
+  .demo-login-actions {
+    grid-template-columns: 1fr;
+  }
+
   .content-shell > .card > .card-body,
   .hero-card > .card-body {
     padding: 1rem;
@@ -944,6 +1142,12 @@ strong {
 
   .workshops-filters {
     grid-template-columns: 1fr;
+  }
+
+  .student-filters,
+  .audit-filters {
+    grid-template-columns: 1fr;
+    width: 100%;
   }
 
   .section-head .form-control,
@@ -965,7 +1169,7 @@ strong {
   }
 
   .table {
-    min-width: 720px;
+    min-width: 640px;
   }
 
   .daily-item,

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Button, Card, Col, Form, Modal, Row, Table } from "react-bootstrap";
+import { Alert, Button, Card, Col, Form, Modal, Row, Table } from "react-bootstrap";
+import { EmptyState } from "../components/common.jsx";
 
 const emptyForm = { nombre: "", apellido: "", telefono: "", tallerId: "" };
 
@@ -7,13 +8,24 @@ export function Teachers({ data, setData, pushHistory }) {
   const [form, setForm] = useState(emptyForm);
   const [selected, setSelected] = useState(null);
   const [editForm, setEditForm] = useState(emptyForm);
+  const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const teacherWorkshops = (docenteId) => data.talleres.filter((t) => t.docenteId === docenteId);
+  const validate = (payload) => {
+    if (!payload.nombre.trim() || !payload.apellido.trim() || !payload.telefono.trim()) return "Completa nombre, apellido y telefono.";
+    if (payload.telefono.trim().length < 8) return "El telefono parece demasiado corto.";
+    return "";
+  };
 
   const submit = (event) => {
     event.preventDefault();
-    if (!form.nombre || !form.apellido || !form.telefono) return;
-    const nuevo = { id: Date.now(), nombre: form.nombre, apellido: form.apellido, telefono: form.telefono };
+    const validation = validate(form);
+    if (validation) {
+      setError(validation);
+      return;
+    }
+    const nuevo = { id: Date.now(), nombre: form.nombre.trim(), apellido: form.apellido.trim(), telefono: form.telefono.trim() };
     const tallerAsignado = data.talleres.find((t) => t.id === Number(form.tallerId));
     setData((prev) => ({
       ...prev,
@@ -22,16 +34,24 @@ export function Teachers({ data, setData, pushHistory }) {
     }));
     pushHistory("Docente", "CREATE", null, { ...nuevo, tallerAsignado: tallerAsignado?.nombre || "" });
     setForm(emptyForm);
+    setError("");
   };
 
   const openProfile = (docente) => {
     setSelected(docente);
     setEditForm({ nombre: docente.nombre, apellido: docente.apellido, telefono: docente.telefono, tallerId: "" });
+    setConfirmDelete(false);
+    setError("");
   };
 
   const saveTeacher = () => {
-    if (!selected || !editForm.nombre || !editForm.apellido || !editForm.telefono) return;
-    const updated = { ...selected, nombre: editForm.nombre, apellido: editForm.apellido, telefono: editForm.telefono };
+    if (!selected) return;
+    const validation = validate(editForm);
+    if (validation) {
+      setError(validation);
+      return;
+    }
+    const updated = { ...selected, nombre: editForm.nombre.trim(), apellido: editForm.apellido.trim(), telefono: editForm.telefono.trim() };
     const tallerAsignado = data.talleres.find((t) => t.id === Number(editForm.tallerId));
     setData((prev) => ({
       ...prev,
@@ -42,6 +62,7 @@ export function Teachers({ data, setData, pushHistory }) {
     }));
     pushHistory("Docente", "UPDATE", selected, { ...updated, tallerAsignado: tallerAsignado?.nombre || "" });
     setSelected(updated);
+    setError("");
   };
 
   const deleteTeacher = () => {
@@ -53,12 +74,14 @@ export function Teachers({ data, setData, pushHistory }) {
     }));
     pushHistory("Docente", "DELETE", selected, null);
     setSelected(null);
+    setConfirmDelete(false);
   };
 
   return (
     <>
       <Card><Card.Body>
         <h2>Docentes</h2>
+        {error && !selected ? <Alert variant="danger" className="py-2">{error}</Alert> : null}
         <Form onSubmit={submit} className="toolbar-form">
           <Form.Control placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
           <Form.Control placeholder="Apellido" value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })} />
@@ -71,7 +94,10 @@ export function Teachers({ data, setData, pushHistory }) {
         </Form>
         <Table responsive hover>
           <thead><tr><th>Nombre</th><th>Telefono</th><th>Talleres</th><th></th></tr></thead>
-          <tbody>{data.docentes.map((d) => <tr key={d.id}><td>{d.nombre} {d.apellido}</td><td>{d.telefono}</td><td>{teacherWorkshops(d.id).map((t) => t.nombre).join(", ") || "-"}</td><td className="text-end"><button type="button" className="table-action is-info" onClick={() => openProfile(d)}>Ver ficha</button></td></tr>)}</tbody>
+          <tbody>
+            {data.docentes.map((d) => <tr key={d.id}><td>{d.nombre} {d.apellido}</td><td>{d.telefono}</td><td>{teacherWorkshops(d.id).map((t) => t.nombre).join(", ") || "-"}</td><td className="text-end"><button type="button" className="table-action is-info" onClick={() => openProfile(d)}>Ver ficha</button></td></tr>)}
+            {!data.docentes.length ? <tr><td colSpan={4}><EmptyState title="Sin docentes" text="Registra el primer docente para asignarlo a un taller." /></td></tr> : null}
+          </tbody>
         </Table>
       </Card.Body></Card>
 
@@ -86,13 +112,14 @@ export function Teachers({ data, setData, pushHistory }) {
                   <p>Telefono: <strong>{selected.telefono}</strong></p>
                   <p>Talleres: <strong>{teacherWorkshops(selected.id).length}</strong></p>
                   <div className="modal-actions justify-content-start">
-                    <Button variant="danger" onClick={deleteTeacher}>Eliminar docente</Button>
+                    <Button variant="danger" onClick={() => setConfirmDelete(true)}>Eliminar docente</Button>
                   </div>
                 </Card.Body></Card>
               </Col>
               <Col md={7}>
                 <Card><Card.Body>
                   <h3>Editar</h3>
+                  {error ? <Alert variant="danger" className="py-2">{error}</Alert> : null}
                   <Form className="d-grid gap-2">
                     <Form.Control placeholder="Nombre" value={editForm.nombre} onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })} />
                     <Form.Control placeholder="Apellido" value={editForm.apellido} onChange={(e) => setEditForm({ ...editForm, apellido: e.target.value })} />
@@ -108,6 +135,15 @@ export function Teachers({ data, setData, pushHistory }) {
             </Row>
           ) : null}
         </Modal.Body>
+      </Modal>
+
+      <Modal show={confirmDelete} onHide={() => setConfirmDelete(false)} centered>
+        <Modal.Header closeButton><Modal.Title>Eliminar docente</Modal.Title></Modal.Header>
+        <Modal.Body>El docente quedara eliminado y sus talleres pasaran a estar sin docente asignado.</Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setConfirmDelete(false)}>Cancelar</Button>
+          <Button variant="danger" onClick={deleteTeacher}>Eliminar</Button>
+        </Modal.Footer>
       </Modal>
     </>
   );
