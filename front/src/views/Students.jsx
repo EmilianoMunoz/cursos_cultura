@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Alert, Button, Card, Form, Stack, Table } from "react-bootstrap";
-import { EmptyState } from "../components/common.jsx";
+import { CuentaAccesoBadge, EmptyState } from "../components/common.jsx";
 import { today } from "../utils/constants.js";
 import { edad } from "../utils/formatters.js";
 
@@ -84,10 +84,19 @@ export function Students({ data, visibleAlumnos, visibleTalleres, query, setQuer
           </div>
         </div>
         <Table responsive hover>
-          <thead><tr><th>Alumno</th><th>DNI</th><th>Email</th><th>Talleres</th><th></th></tr></thead>
+          <thead><tr><th>Alumno</th><th>DNI</th><th>Email</th><th>Acceso</th><th>Talleres</th><th></th></tr></thead>
           <tbody>
-            {filtered.map((a) => <tr key={a.id}><td><strong>{a.nombre} {a.apellido}</strong><div className="text-muted small">{edad(a.fechaNacimiento)} años</div></td><td>{a.dni}</td><td>{a.email}</td><td>{data.inscripciones.filter((i) => i.alumnoId === a.id && i.estado === "Activo").map((i) => data.talleres.find((t) => t.id === i.tallerId)?.nombre).join(", ") || "-"}</td><td className="text-end"><Button size="sm" variant="outline-primary" onClick={() => openStudent(a)}>Ficha</Button></td></tr>)}
-            {!filtered.length ? <tr><td colSpan={5}><EmptyState title="Sin alumnos" text="No hay alumnos para ese taller o busqueda." /></td></tr> : null}
+            {filtered.map((a) => (
+              <tr key={a.id}>
+                <td><strong>{a.nombre} {a.apellido}</strong><div className="text-muted small">{edad(a.fechaNacimiento)} años</div></td>
+                <td>{a.dni}</td>
+                <td>{a.email || "-"}</td>
+                <td><CuentaAccesoBadge data={data} email={a.email} /></td>
+                <td>{data.inscripciones.filter((i) => i.alumnoId === a.id && i.estado === "Activo").map((i) => data.talleres.find((t) => t.id === i.tallerId)?.nombre).join(", ") || "-"}</td>
+                <td className="text-end"><Button size="sm" variant="outline-primary" onClick={() => openStudent(a)}>Ficha</Button></td>
+              </tr>
+            ))}
+            {!filtered.length ? <tr><td colSpan={6}><EmptyState title="Sin alumnos" text="No hay alumnos para ese taller o busqueda." /></td></tr> : null}
           </tbody>
         </Table>
       </Card.Body></Card>
