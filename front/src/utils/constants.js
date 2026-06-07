@@ -4,6 +4,8 @@ export const permissions = {
   Alumno: ["talleres"]
 };
 
+export const permisoReferente = "usuariosSistema";
+
 export const views = [
   ["dashboard", "Tablero"],
   ["talleres", "Talleres"],
@@ -12,8 +14,24 @@ export const views = [
   ["alumnos", "Alumnos"],
   ["asistencia", "Asistencia"],
   ["reportes", "Reportes"],
-  ["historial", "Historial"]
+  ["historial", "Historial"],
+  [permisoReferente, "Usuarios del sistema"]
 ];
+
+export function permisosUsuario(user) {
+  const base = permissions[user?.role] || [];
+  if (user?.role === "Administrador" && user?.puedeGestionarUsuarios) {
+    return [...base, permisoReferente];
+  }
+  return base;
+}
+
+export function etiquetaRol(user) {
+  if (user?.role === "Administrador") {
+    return user.puedeGestionarUsuarios ? "Admin general" : "Admin común";
+  }
+  return user?.role || "";
+}
 
 export function getToday() {
   const now = new Date();

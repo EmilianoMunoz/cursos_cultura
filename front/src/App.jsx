@@ -11,10 +11,11 @@ import { AuditLog } from "./views/AuditLog.jsx";
 import { Dashboard } from "./views/Dashboard.jsx";
 import { Reports } from "./views/Reports.jsx";
 import { Students } from "./views/Students.jsx";
+import { AdminUsers } from "./views/AdminUsers.jsx";
 import { Teachers } from "./views/Teachers.jsx";
 import { WorkshopManagement } from "./views/WorkshopManagement.jsx";
 import { Workshops } from "./views/Workshops.jsx";
-import { permissions, today, views } from "./utils/constants.js";
+import { etiquetaRol, permisosUsuario, today, views } from "./utils/constants.js";
 import { etiquetaEstado, normalizarEstado } from "./utils/formatters.js";
 import { talleresConAsistenciaPendiente } from "./utils/talleres.js";
 
@@ -35,7 +36,7 @@ export default function App() {
   const [searchNotice, setSearchNotice] = useState("");
 
   const role = currentUser?.role || "Administrador";
-  const allowed = permissions[role] || [];
+  const allowed = permisosUsuario(currentUser);
   const docenteId = currentUser?.docenteId;
   const alumnoId = currentUser?.alumnoId;
 
@@ -84,6 +85,17 @@ export default function App() {
         ? "asistencia"
         : "dashboard";
     setView(nextView);
+  };
+
+  const register = ({ user, source, pendienteId }) => {
+    setData((prev) => ({
+      ...prev,
+      usuarios: [...prev.usuarios, user],
+      usuariosPendientes: source === "admin-pendiente"
+        ? prev.usuariosPendientes.filter((u) => u.id !== pendienteId)
+        : prev.usuariosPendientes
+    }));
+    login(user);
   };
 
   const saveWorkshop = (workshop) => {
@@ -160,7 +172,7 @@ export default function App() {
     XLSX.writeFile(wb, "reporte-punto-digital.xlsx");
   };
 
-  if (!currentUser) return <LoginScreen onLogin={login} />;
+  if (!currentUser) return <LoginScreen data={data} onLogin={login} onRegister={register} />;
 
   const openStudentFromSearch = (value) => {
     const q = value.trim().toLowerCase();
@@ -197,7 +209,7 @@ export default function App() {
               {searchNotice ? <div className="global-search-notice">{searchNotice}</div> : null}
             </Form>
             <Stack direction="horizontal" gap={2} className="ms-lg-3 align-items-center flex-wrap">
-              <div className="session-pill"><span>{currentUser.nombre}</span><small>{currentUser.role}</small></div>
+              <div className="session-pill"><span>{currentUser.nombre}</span><small>{etiquetaRol(currentUser)}</small></div>
               {role !== "Alumno" ? <Button size="sm" variant="outline-light" onClick={exportExcel}>Exportar</Button> : null}
               <Button size="sm" variant="light" onClick={() => setCurrentUser(null)}>Salir</Button>
             </Stack>
@@ -223,6 +235,7 @@ export default function App() {
           {view === "asistencia" && <Attendance data={data} setData={setData} visibleTalleres={visibleTalleres} selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTaller={selectedAttendanceTaller} setSelectedTaller={setSelectedAttendanceTaller} pushHistory={pushHistory} />}
           {view === "reportes" && <Reports data={data} rows={reportRows()} filters={filters} setFilters={setFilters} visibleTalleres={visibleTalleres} role={role} docenteName={docenteName} />}
           {view === "historial" && <AuditLog historial={data.historial} query={auditQuery} setQuery={setAuditQuery} alumnoName={alumnoName} tallerName={tallerName} />}
+          {view === "usuariosSistema" && <AdminUsers data={data} setData={setData} pushHistory={pushHistory} currentUser={currentUser} />}
         </main>
       </Container>
 

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import logoMuni from "../../assets/logo_muni.jpg";
-import { demoUsers } from "../data/demoData.js";
+import { loginDemo, registerDemo, validateRegisterInput } from "../utils/auth.js";
 
 const PUNTO_DIGITAL_CONTACTO = {
   telefono: "2604-000000",
@@ -21,7 +21,7 @@ function AuthReminder() {
   );
 }
 
-export function LoginScreen({ onLogin }) {
+export function LoginScreen({ data, onLogin, onRegister }) {
   const [activeTab, setActiveTab] = useState("login");
   const [loginForm, setLoginForm] = useState(emptyLogin);
   const [registerForm, setRegisterForm] = useState(emptyRegister);
@@ -34,17 +34,16 @@ export function LoginScreen({ onLogin }) {
 
   const submitLogin = (event) => {
     event.preventDefault();
-    const email = loginForm.email.trim().toLowerCase();
-    const user = demoUsers.find((u) => u.email.toLowerCase() === email && u.password === loginForm.password);
-    if (!user) {
-      setError("Email o contraseña incorrectos.");
+    const result = loginDemo(data, loginForm.email, loginForm.password);
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
-    onLogin(user);
+    onLogin(result.user);
   };
 
   const quickLogin = (email) => {
-    const user = demoUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const user = data.usuarios.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (!user) return;
     setLoginForm({ email: user.email, password: user.password });
     setError("");
@@ -53,27 +52,21 @@ export function LoginScreen({ onLogin }) {
 
   const submitRegister = (event) => {
     event.preventDefault();
-    const email = registerForm.email.trim().toLowerCase();
-
-    if (!email) {
-      setError("Completa tu email.");
-      return;
-    }
-    if (registerForm.password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
-      return;
-    }
-    if (registerForm.password !== registerForm.confirmPassword) {
-      setError("Las contraseñas no coinciden.");
+    const validation = validateRegisterInput(registerForm);
+    if (!validation.ok) {
+      setError(validation.error);
       return;
     }
 
-    if (demoUsers.some((u) => u.email.toLowerCase() === email)) {
-      setError("Este email ya tiene acceso. Usá Ingresar.");
+    const result = registerDemo(data, validation.email, registerForm.password);
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
 
-    setError("Email no registrado en el sistema. Contactá a Punto Digital.");
+    onRegister(result);
+    setRegisterForm(emptyRegister);
+    setError("");
   };
 
   return (
@@ -109,11 +102,13 @@ export function LoginScreen({ onLogin }) {
                   {error ? <p className="auth-error">{error}</p> : null}
                   <Button variant="success" type="submit">Ingresar</Button>
                   <div className="demo-login-actions" aria-label="Accesos rapidos demo">
-                    <Button type="button" variant="outline-primary" onClick={() => quickLogin("admin@punto.digital")}>Administrador</Button>
+                    <Button type="button" variant="outline-primary" onClick={() => quickLogin("admin@punto.digital")}>Admin general</Button>
+                    <Button type="button" variant="outline-primary" onClick={() => quickLogin("juan.operador@punto.digital")}>Admin común</Button>
                     <Button type="button" variant="outline-primary" onClick={() => quickLogin("paula.herrera@punto.digital")}>Docente</Button>
                     <Button type="button" variant="outline-primary" onClick={() => quickLogin("ana.gomez@punto.digital")}>Alumno</Button>
                   </div>
                   <p className="auth-demo">Accesos provisorios para revisar vistas por rol.</p>
+                  <p className="auth-demo">Probar Registrarse: docente <strong>matias.roman@punto.digital</strong>, alumno <strong>carlos.quiroga2@demo.com</strong>, admin <strong>maria.lopez@punto.digital</strong>.</p>
                   <AuthReminder />
                 </Form>
               ) : (

@@ -21,11 +21,20 @@ export const DISTRITOS_SAN_RAFAEL = [
   "Villa 25 de Mayo"
 ];
 
-export const demoUsers = [
-  { id: 1, nombre: "Admin San Rafael", email: "admin@punto.digital", password: "admin123", role: "Administrador" },
-  { id: 2, nombre: "Paula Herrera", email: "paula.herrera@punto.digital", password: "docente123", role: "Docente", docenteId: 1 },
-  { id: 3, nombre: "Ana Gomez", email: "ana.gomez@punto.digital", password: "alumno123", role: "Alumno", alumnoId: 1 }
+export const usuariosIniciales = [
+  { id: 1, nombre: "Admin San Rafael", email: "admin@punto.digital", password: "admin123", role: "Administrador", activo: true, puedeGestionarUsuarios: true },
+  { id: 4, nombre: "Juan Operador", email: "juan.operador@punto.digital", password: "admincomun123", role: "Administrador", activo: true, puedeGestionarUsuarios: false },
+  { id: 2, nombre: "Paula Herrera", email: "paula.herrera@punto.digital", password: "docente123", role: "Docente", docenteId: 1, activo: true },
+  { id: 3, nombre: "Ana Gomez", email: "ana.gomez@punto.digital", password: "alumno123", role: "Alumno", alumnoId: 1, activo: true }
 ];
+
+/** Admin creado por referente, pendiente de elegir contraseña en Registrarse. */
+export const usuariosPendientes = [
+  { id: 101, nombre: "Maria Lopez", email: "maria.lopez@punto.digital", role: "Administrador", activo: true, puedeGestionarUsuarios: false }
+];
+
+/** Alias para accesos rapidos demo y documentacion. */
+export const demoUsers = usuariosIniciales;
 
 const getToday = () => {
   const now = new Date();
@@ -177,5 +186,7 @@ export const initialData = {
   alumnos,
   inscripciones,
   asistencias,
-  historial: []
+  historial: [],
+  usuarios: [...usuariosIniciales],
+  usuariosPendientes: [...usuariosPendientes]
 };

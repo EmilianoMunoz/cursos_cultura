@@ -33,10 +33,17 @@ No requiere backend para esta version demo.
 
 Por ahora el login tiene botones provisorios por rol para facilitar la revision de vistas.
 
-### Administrador
+### Admin general (referente)
 
 - **Email:** `admin@punto.digital`
 - **Contraseña:** `admin123`
+- Gestiona usuarios del sistema y ve el menu **Usuarios del sistema**.
+
+### Admin común
+
+- **Email:** `juan.operador@punto.digital`
+- **Contraseña:** `admincomun123`
+- Misma gestion operativa, sin administrar otras cuentas admin.
 
 ### Docente vigente (Paula Herrera)
 

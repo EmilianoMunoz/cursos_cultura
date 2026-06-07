@@ -15,10 +15,10 @@ Documento de mejoras acordadas para alinear el frontend con el backend real y el
 | 1 | Email en gestión de docentes | ✅ Hecho | — |
 | 2 | Varios horarios por taller (hasta 3 por día) | ✅ Hecho | — |
 | 3 | Pantalla auth: **Ingresar** + **Registrarse** | ✅ Hecho (UI) | — |
-| 4 | Lógica demo de registro cerrado (sin rol ni nombre) | Pendiente | Alta |
+| 4 | Lógica demo de registro cerrado (sin rol ni nombre) | ✅ Hecho | — |
 | 5 | Recordatorio de contacto Punto Digital | ✅ Hecho | — |
 | 6 | Indicador cuenta activa / pendiente (docentes y alumnos) | Pendiente | Media |
-| 7 | Gestión de cuentas admin (vista referente) | Pendiente | Media |
+| 7 | Gestión de cuentas admin (vista referente) | ✅ Hecho (demo) | — |
 | 8 | Integración auth con backend (JWT, API) | Pendiente | Alta (cuando exista API) |
 | 9 | Modo demo acotado (`VITE_USE_DEMO_AUTH`) | Pendiente | Baja |
 
@@ -138,9 +138,9 @@ ADMIN INICIAL (seed)
 
 ---
 
-## 4. Lógica demo de registro cerrado (pendiente)
+## 4. Lógica demo de registro cerrado ✅
 
-Mientras no exista backend, simular el flujo en memoria.
+Implementado en `utils/auth.js`, `LoginScreen.jsx`, `App.jsx` y `demoData.js`.
 
 ### Fuentes de datos
 
@@ -148,26 +148,28 @@ Mientras no exista backend, simular el flujo en memoria.
 |--------|-----|
 | `data.docentes` | Email precargado → rol Docente |
 | `data.alumnos` | Email precargado → rol Alumno |
-| `demoUsers` / `data.usuariosPendientes` | Admins precargados por referente (sin pass) |
-| `demoUsers` (con password) | Cuentas ya activadas → solo Ingresar |
+| `data.usuariosPendientes` | Admins precargados por referente (sin pass) |
+| `data.usuarios` | Cuentas ya activadas → solo Ingresar |
 
 ### Algoritmo demo (Registrarse)
 
 ```
 1. Normalizar email
-2. Si ya existe en demoUsers con password → error "ya tiene acceso"
-3. Si existe en docentes sin usuario → crear usuario Docente + docenteId
-4. Si existe en alumnos sin usuario → crear usuario Alumno + alumnoId
-5. Si existe en usuariosPendientes admin → completar password
+2. Si ya existe en data.usuarios → error "ya tiene acceso"
+3. Si existe en docentes → crear usuario Docente + docenteId
+4. Si existe en alumnos → crear usuario Alumno + alumnoId
+5. Si existe en usuariosPendientes → completar password como Administrador
 6. Si no existe en ningún lado → error + recordatorio contacto
 ```
 
-### Cambios en archivos
+### Emails de prueba (demo)
 
-- [ ] `demoData.js`: array `usuariosPendientes` (admins creados por referente, sin password).
-- [ ] `App.jsx`: pasar `data` a `LoginScreen` para validar emails en docentes/alumnos.
-- [ ] `App.jsx`: persistir nuevos usuarios activados en estado (o `localStorage` para demo).
-- [ ] Helper `utils/auth.js` con `loginDemo()` y `registerDemo()`.
+| Email | Origen | Rol al registrarse |
+|-------|--------|-------------------|
+| `matias.roman@punto.digital` | Docente precargado | Docente |
+| `carlos.quiroga2@demo.com` | Alumno precargado | Alumno |
+| `maria.lopez@punto.digital` | Admin pendiente (referente) | Administrador |
+| `random@gmail.com` | No existe | Error |
 
 ---
 
@@ -198,12 +200,13 @@ ADMIN_INITIAL_PASSWORD=cambiar-en-primer-despliegue
 
 Ese admin entra por **Ingresar**, no por Registrarse.
 
-### Front pendiente
+### Front ✅ (demo)
 
-- [ ] Vista `AdminUsers.jsx` (solo referente).
-- [ ] Alta admin: email + nombre (sin contraseña).
-- [ ] Desactivar / activar cuenta.
-- [ ] Menú en `App.jsx`: "Usuarios del sistema".
+- [x] Vista `AdminUsers.jsx` (solo referente con `puedeGestionarUsuarios`).
+- [x] Alta admin común: email + nombre → `usuariosPendientes`.
+- [x] Desactivar / activar cuenta activa.
+- [x] Menú **Usuarios del sistema** condicionado al referente.
+- [x] Accesos rapidos demo: **Admin general** / **Admin común**.
 
 ---
 
@@ -225,17 +228,16 @@ Orden propuesto para el siguiente PR / sesión de trabajo:
 3. ~~Subtítulo + recordatorio de contacto Punto Digital.~~
 4. ~~Mensajes de error de validación cliente.~~
 
-### Paso B — Lógica demo (siguiente)
-5. Crear `utils/auth.js` con validación de registro cerrado.
-6. Pasar `data` desde `App.jsx` a `LoginScreen`.
-7. Agregar `usuariosPendientes` en `demoData.js` (ej. un admin sin activar).
-8. Persistir usuarios registrados en la sesión demo.
+### ~~Paso B~~ — Lógica demo ✅
+5. ~~Crear `utils/auth.js` con validación de registro cerrado.~~
+6. ~~Pasar `data` desde `App.jsx` a `LoginScreen`.~~
+7. ~~Agregar `usuariosPendientes` en `demoData.js`.~~
+8. ~~Persistir usuarios registrados en estado de la app.~~
 
 ### Paso C — Indicadores
 9. Badge "Cuenta activa" / "Pendiente" en ficha docente y alumno.
 
-### No incluido en esta tanda (requiere backend o más alcance)
-- Vista `AdminUsers.jsx`.
+### No incluido aún
 - Conexión real a API.
 - Ocultar botones demo con variable de entorno (opcional en Paso A).
 
@@ -248,7 +250,7 @@ Orden propuesto para el siguiente PR / sesión de trabajo:
 - [x] Registro sin rol ni nombre (UI)
 - [x] Recordatorio contacto
 - [x] Validación cliente (pass, confirmar, email ya activo)
-- [ ] Lógica demo registro cerrado (Paso B)
+- [x] Lógica demo registro cerrado (Paso B)
 - [ ] API (futuro)
 
 ### `Teachers.jsx`
@@ -263,15 +265,15 @@ Orden propuesto para el siguiente PR / sesión de trabajo:
 
 ### `demoData.js`
 - [x] Email en docentes
-- [ ] `usuariosPendientes` para demo de admin
+- [x] `usuarios` y `usuariosPendientes` para demo de auth
 
 ### `App.jsx`
-- [ ] Pasar data a LoginScreen
-- [ ] Menú Usuarios del sistema (futuro)
+- [x] Pasar data a LoginScreen y persistir registros
+- [x] Menú Usuarios del sistema (referente)
 
 ### Nuevos
-- [ ] `utils/auth.js`
-- [ ] `AdminUsers.jsx` (futuro)
+- [x] `utils/auth.js`
+- [x] `AdminUsers.jsx`
 - [ ] `api/auth.js` (futuro)
 
 ---
