@@ -17,7 +17,7 @@ Documento de mejoras acordadas para alinear el frontend con el backend real y el
 | 3 | Pantalla auth: **Ingresar** + **Registrarse** | ✅ Hecho (UI) | — |
 | 4 | Lógica demo de registro cerrado (sin rol ni nombre) | ✅ Hecho | — |
 | 5 | Recordatorio de contacto Punto Digital | ✅ Hecho | — |
-| 6 | Indicador cuenta activa / pendiente (docentes y alumnos) | Pendiente | Media |
+| 6 | Indicador cuenta activa / pendiente (docentes y alumnos) | ✅ Hecho | — |
 | 7 | Gestión de cuentas admin (vista referente) | ✅ Hecho (demo) | — |
 | 8 | Integración auth con backend (JWT, API) | Pendiente | Alta (cuando exista API) |
 | 9 | Modo demo acotado (`VITE_USE_DEMO_AUTH`) | Pendiente | Baja |
@@ -173,11 +173,11 @@ Implementado en `utils/auth.js`, `LoginScreen.jsx`, `App.jsx` y `demoData.js`.
 
 ---
 
-## 5. Indicador cuenta activa / pendiente (pendiente)
+## 5. Indicador cuenta activa / pendiente ✅
 
-- [ ] Ficha docente (`Teachers.jsx`): badge según si email tiene usuario activo.
-- [ ] Ficha alumno (`StudentProfile.jsx`): mismo badge.
-- [ ] Demo: cruzar email con `demoUsers` / usuarios en sesión.
+- [x] Ficha y tabla docente (`Teachers.jsx`): badge según `data.usuarios`.
+- [x] Ficha alumno (`StudentProfile.jsx`): mismo badge.
+- [x] Helper `estadoCuentaAcceso()` y componente `CuentaAccesoBadge` en `common.jsx`.
 
 ---
 
@@ -234,8 +234,8 @@ Orden propuesto para el siguiente PR / sesión de trabajo:
 7. ~~Agregar `usuariosPendientes` en `demoData.js`.~~
 8. ~~Persistir usuarios registrados en estado de la app.~~
 
-### Paso C — Indicadores
-9. Badge "Cuenta activa" / "Pendiente" en ficha docente y alumno.
+### ~~Paso C~~ — Indicadores ✅
+9. ~~Badge "Cuenta activa" / "Pendiente" en ficha docente y alumno.~~
 
 ### No incluido aún
 - Conexión real a API.
@@ -255,13 +255,13 @@ Orden propuesto para el siguiente PR / sesión de trabajo:
 
 ### `Teachers.jsx`
 - [x] Email (alta, edición, tabla, ficha)
-- [ ] Badge cuenta activada
+- [x] Badge cuenta activada
 
 ### `WorkshopForm.jsx`
 - [x] Múltiples horarios por día
 
 ### `StudentProfile.jsx`
-- [ ] Badge cuenta activada
+- [x] Badge cuenta activada
 
 ### `demoData.js`
 - [x] Email en docentes

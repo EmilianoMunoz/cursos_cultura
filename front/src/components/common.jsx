@@ -1,6 +1,12 @@
 import React from "react";
 import { Badge, Card, Stack } from "react-bootstrap";
+import { estadoCuentaAcceso } from "../utils/auth.js";
 import { estadoClass, horariosOrdenados, porcentaje } from "../utils/formatters.js";
+
+export function CuentaAccesoBadge({ data, email }) {
+  const cuenta = estadoCuentaAcceso(data, email);
+  return <span className={`state-chip ${cuenta.className}`}>{cuenta.label}</span>;
+}
 
 export function HorarioChips({ taller }) {
   const abreviaturas = { Lunes: "Lunes", Martes: "Martes", Miercoles: "Miercoles", Jueves: "Jueves", Viernes: "Viernes", Sabado: "Sabado" };

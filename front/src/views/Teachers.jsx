@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Alert, Button, Card, Col, Form, Modal, Row, Table } from "react-bootstrap";
-import { EmptyState } from "../components/common.jsx";
+import { CuentaAccesoBadge, EmptyState } from "../components/common.jsx";
 
 const emptyForm = { nombre: "", apellido: "", telefono: "", email: "", tallerId: "" };
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -120,18 +120,19 @@ export function Teachers({ data, setData, pushHistory }) {
           <Button variant="success" type="submit">Registrar</Button>
         </Form>
         <Table responsive hover>
-          <thead><tr><th>Nombre</th><th>Email</th><th>Telefono</th><th>Talleres</th><th></th></tr></thead>
+          <thead><tr><th>Nombre</th><th>Email</th><th>Acceso</th><th>Telefono</th><th>Talleres</th><th></th></tr></thead>
           <tbody>
             {data.docentes.map((d) => (
               <tr key={d.id}>
                 <td>{d.nombre} {d.apellido}</td>
                 <td>{d.email || "-"}</td>
+                <td><CuentaAccesoBadge data={data} email={d.email} /></td>
                 <td>{d.telefono}</td>
                 <td>{teacherWorkshops(d.id).map((t) => t.nombre).join(", ") || "-"}</td>
                 <td className="text-end"><button type="button" className="table-action is-info" onClick={() => openProfile(d)}>Ver ficha</button></td>
               </tr>
             ))}
-            {!data.docentes.length ? <tr><td colSpan={5}><EmptyState title="Sin docentes" text="Registra el primer docente para asignarlo a un taller." /></td></tr> : null}
+            {!data.docentes.length ? <tr><td colSpan={6}><EmptyState title="Sin docentes" text="Registra el primer docente para asignarlo a un taller." /></td></tr> : null}
           </tbody>
         </Table>
       </Card.Body></Card>
@@ -145,6 +146,7 @@ export function Teachers({ data, setData, pushHistory }) {
                 <Card><Card.Body>
                   <h3>Ficha</h3>
                   <p>Email: <strong>{selected.email || "-"}</strong></p>
+                  <p>Acceso al sistema: <CuentaAccesoBadge data={data} email={selected.email} /></p>
                   <p>Telefono: <strong>{selected.telefono}</strong></p>
                   <p>Talleres: <strong>{teacherWorkshops(selected.id).length}</strong></p>
                   <div className="modal-actions justify-content-start">

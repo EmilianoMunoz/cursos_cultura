@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button, Card, Col, Form, Row, Stack } from "react-bootstrap";
+import { CuentaAccesoBadge } from "./common.jsx";
 import { diasTexto, edad, etiquetaEstado, normalizarEstado } from "../utils/formatters.js";
 
 const formFromStudent = (alumno) => ({
@@ -89,6 +90,7 @@ export function StudentProfile({ alumno, data, onSave, canEdit = true }) {
               <p>Edad: <strong>{edad(alumno.fechaNacimiento)}</strong></p>
               <p>Telefono: <strong>{alumno.telefono || "-"}</strong></p>
               <p>Email: <strong>{alumno.email || "-"}</strong></p>
+              <p>Acceso al sistema: <CuentaAccesoBadge data={data} email={alumno.email} /></p>
               <p>Direccion: <strong>{alumno.direccion || "-"}</strong></p>
             </>
           )}

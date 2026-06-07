@@ -104,5 +104,21 @@ export function registerDemo(data, email, password) {
 }
 
 export function cuentaActivaPorEmail(data, email) {
-  return Boolean(findActivatedUser(data.usuarios, email));
+  const user = findActivatedUser(data.usuarios, email);
+  return Boolean(user && user.activo !== false);
+}
+
+export function estadoCuentaAcceso(data, email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) {
+    return { estado: "sin-email", label: "Sin email", className: "is-neutral" };
+  }
+  const user = findActivatedUser(data.usuarios, normalized);
+  if (user) {
+    if (user.activo === false) {
+      return { estado: "inactiva", label: "Cuenta inactiva", className: "is-danger" };
+    }
+    return { estado: "activa", label: "Cuenta activa", className: "is-ok" };
+  }
+  return { estado: "pendiente", label: "Pendiente de activacion", className: "is-warn" };
 }
