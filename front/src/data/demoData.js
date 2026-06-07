@@ -47,7 +47,10 @@ export const docentes = nombresDocentes.map(([nombre, apellido], index) => ({
   id: index + 1,
   nombre,
   apellido,
-  telefono: `2604${String(550071 + index).padStart(6, "0")}`
+  telefono: `2604${String(550071 + index).padStart(6, "0")}`,
+  email: index === 0
+    ? "paula.herrera@punto.digital"
+    : `${nombre.toLowerCase()}.${apellido.toLowerCase()}@punto.digital`
 }));
 
 const talleresBase = [
@@ -69,8 +72,16 @@ const direcciones = [
 ];
 
 const horariosModelos = [
-  [{ dia: "Lunes", inicio: "18:00", fin: "20:00" }, { dia: "Miercoles", inicio: "18:30", fin: "20:00" }],
-  [{ dia: "Martes", inicio: "10:00", fin: "12:00" }, { dia: "Jueves", inicio: "09:30", fin: "11:30" }],
+  [
+    { dia: "Lunes", inicio: "09:00", fin: "11:00" },
+    { dia: "Lunes", inicio: "18:00", fin: "20:00" },
+    { dia: "Miercoles", inicio: "18:30", fin: "20:00" }
+  ],
+  [
+    { dia: "Martes", inicio: "10:00", fin: "12:00" },
+    { dia: "Martes", inicio: "16:00", fin: "18:00" },
+    { dia: "Jueves", inicio: "09:30", fin: "11:30" }
+  ],
   [{ dia: "Viernes", inicio: "16:30", fin: "18:00" }],
   [{ dia: "Lunes", inicio: "14:00", fin: "16:00" }],
   [{ dia: "Sabado", inicio: "18:30", fin: "20:30" }],

@@ -39,7 +39,11 @@ export function edad(fechaNacimiento) {
 }
 
 export function horariosOrdenados(taller) {
-  return [...(taller?.horarios || [])].sort((a, b) => DIAS_TALLER.indexOf(a.dia) - DIAS_TALLER.indexOf(b.dia));
+  return [...(taller?.horarios || [])].sort((a, b) => {
+    const dayDiff = DIAS_TALLER.indexOf(a.dia) - DIAS_TALLER.indexOf(b.dia);
+    if (dayDiff !== 0) return dayDiff;
+    return (a.inicio || "").localeCompare(b.inicio || "");
+  });
 }
 
 export function diasTexto(taller) {

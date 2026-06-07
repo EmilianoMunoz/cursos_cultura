@@ -2,6 +2,26 @@ import React, { useState } from "react";
 import { Alert, Button, Col, Form, Row } from "react-bootstrap";
 import { DIAS_TALLER, DISTRITOS_SAN_RAFAEL } from "../data/demoData.js";
 
+const MAX_SLOTS_PER_DAY = 3;
+
+function slugify(value) {
+  return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
+function buildHorariosPorDia(initial) {
+  return DIAS_TALLER.reduce((acc, dia) => {
+    const slots = (initial?.horarios || [])
+      .filter((h) => h.dia === dia)
+      .map((h, index) => ({
+        id: `${dia}-${slugify(h.inicio)}-${slugify(h.fin)}-${index}`,
+        inicio: h.inicio || "",
+        fin: h.fin || ""
+      }));
+    acc[dia] = slots;
+    return acc;
+  }, {});
+}
+
 export function WorkshopForm({ initial, docentes, onSubmit, onCancel }) {
   const [form, setForm] = useState(() => ({
     nombre: initial?.nombre || "",
@@ -10,37 +30,73 @@ export function WorkshopForm({ initial, docentes, onSubmit, onCancel }) {
     distrito: initial?.distrito || "Ciudad",
     docenteId: initial?.docenteId || "",
     estado: initial?.estado || "Activo",
-    horarios: DIAS_TALLER.reduce((acc, dia) => {
-      const actual = initial?.horarios?.find((h) => h.dia === dia);
-      acc[dia] = { activo: Boolean(actual), inicio: actual?.inicio || "", fin: actual?.fin || "" };
-      return acc;
-    }, {})
+    horariosPorDia: buildHorariosPorDia(initial)
   }));
   const [error, setError] = useState("");
 
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
-  const updateHorario = (dia, patch) => {
-    setForm((prev) => ({ ...prev, horarios: { ...prev.horarios, [dia]: { ...prev.horarios[dia], ...patch } } }));
+
+  const addSlot = (dia) => {
+    setForm((prev) => {
+      const slots = prev.horariosPorDia[dia] || [];
+      if (slots.length >= MAX_SLOTS_PER_DAY) return prev;
+      return {
+        ...prev,
+        horariosPorDia: {
+          ...prev.horariosPorDia,
+          [dia]: [...slots, { id: `${dia}-${Date.now()}`, inicio: "", fin: "" }]
+        }
+      };
+    });
+  };
+
+  const removeSlot = (dia, slotId) => {
+    setForm((prev) => ({
+      ...prev,
+      horariosPorDia: {
+        ...prev.horariosPorDia,
+        [dia]: prev.horariosPorDia[dia].filter((slot) => slot.id !== slotId)
+      }
+    }));
+  };
+
+  const updateSlot = (dia, slotId, patch) => {
+    setForm((prev) => ({
+      ...prev,
+      horariosPorDia: {
+        ...prev.horariosPorDia,
+        [dia]: prev.horariosPorDia[dia].map((slot) => slot.id === slotId ? { ...slot, ...patch } : slot)
+      }
+    }));
   };
 
   const submit = (event) => {
     event.preventDefault();
-    const horarios = DIAS_TALLER
-      .filter((dia) => form.horarios[dia].activo)
-      .map((dia) => ({ dia, inicio: form.horarios[dia].inicio, fin: form.horarios[dia].fin }));
+    const horarios = DIAS_TALLER.flatMap((dia) =>
+      (form.horariosPorDia[dia] || []).map((slot) => ({ dia, inicio: slot.inicio, fin: slot.fin }))
+    );
+
     if (!form.nombre.trim() || !form.tipo.trim() || !form.direccion.trim() || !form.distrito) {
       setError("Completa nombre, tipo, direccion y distrito.");
       return;
     }
     if (!horarios.length) {
-      setError("Selecciona al menos un dia y horario.");
+      setError("Agrega al menos un horario.");
       return;
     }
+
+    const exceso = DIAS_TALLER.find((dia) => (form.horariosPorDia[dia] || []).length > MAX_SLOTS_PER_DAY);
+    if (exceso) {
+      setError(`Cada dia admite hasta ${MAX_SLOTS_PER_DAY} horarios. Revisa ${exceso}.`);
+      return;
+    }
+
     const invalido = horarios.find((h) => !h.inicio || !h.fin || h.inicio >= h.fin);
     if (invalido) {
       setError(`Revisa inicio y fin para ${invalido.dia}.`);
       return;
     }
+
     onSubmit({
       ...initial,
       nombre: form.nombre.trim(),
@@ -49,7 +105,7 @@ export function WorkshopForm({ initial, docentes, onSubmit, onCancel }) {
       distrito: form.distrito,
       docenteId: Number(form.docenteId) || null,
       estado: form.estado,
-      dias: horarios.map((h) => h.dia),
+      dias: [...new Set(horarios.map((h) => h.dia))],
       horarios
     });
   };
@@ -87,16 +143,55 @@ export function WorkshopForm({ initial, docentes, onSubmit, onCancel }) {
           </Form.Group>
         </Col>
       </Row>
-      <details className="agenda-details mt-3">
-        <summary><span>Dias y horarios</span><small>Configurar agenda del taller</small></summary>
+      <details className="agenda-details mt-3" open>
+        <summary><span>Dias y horarios</span><small>Hasta {MAX_SLOTS_PER_DAY} turnos por dia</small></summary>
         <div className="agenda-grid">
-          {DIAS_TALLER.map((dia) => (
-            <div className="agenda-row" key={dia}>
-              <Form.Check type="checkbox" label={dia} checked={form.horarios[dia].activo} onChange={(e) => updateHorario(dia, { activo: e.target.checked })} />
-              <Form.Control type="time" value={form.horarios[dia].inicio} onChange={(e) => updateHorario(dia, { inicio: e.target.value })} disabled={!form.horarios[dia].activo} />
-              <Form.Control type="time" value={form.horarios[dia].fin} onChange={(e) => updateHorario(dia, { fin: e.target.value })} disabled={!form.horarios[dia].activo} />
-            </div>
-          ))}
+          {DIAS_TALLER.map((dia) => {
+            const slots = form.horariosPorDia[dia] || [];
+            return (
+              <div className="agenda-day" key={dia}>
+                <div className="agenda-day-head">
+                  <strong>{dia}</strong>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline-primary"
+                    disabled={slots.length >= MAX_SLOTS_PER_DAY}
+                    onClick={() => addSlot(dia)}
+                  >
+                    + Horario
+                  </Button>
+                </div>
+                {!slots.length ? (
+                  <p className="agenda-day-empty">Sin horarios para este dia.</p>
+                ) : (
+                  slots.map((slot, index) => (
+                    <div className="agenda-slot" key={slot.id}>
+                      <span className="agenda-slot-label">Turno {index + 1}</span>
+                      <Form.Control
+                        type="time"
+                        value={slot.inicio}
+                        onChange={(e) => updateSlot(dia, slot.id, { inicio: e.target.value })}
+                      />
+                      <Form.Control
+                        type="time"
+                        value={slot.fin}
+                        onChange={(e) => updateSlot(dia, slot.id, { fin: e.target.value })}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline-danger"
+                        onClick={() => removeSlot(dia, slot.id)}
+                      >
+                        Quitar
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            );
+          })}
         </div>
       </details>
       <div className="modal-actions">

@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Alert, Button, Card, Col, Form, Modal, Row, Table } from "react-bootstrap";
 import { EmptyState } from "../components/common.jsx";
 
-const emptyForm = { nombre: "", apellido: "", telefono: "", tallerId: "" };
+const emptyForm = { nombre: "", apellido: "", telefono: "", email: "", tallerId: "" };
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function Teachers({ data, setData, pushHistory }) {
   const [form, setForm] = useState(emptyForm);
@@ -12,9 +13,16 @@ export function Teachers({ data, setData, pushHistory }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const teacherWorkshops = (docenteId) => data.talleres.filter((t) => t.docenteId === docenteId);
-  const validate = (payload) => {
-    if (!payload.nombre.trim() || !payload.apellido.trim() || !payload.telefono.trim()) return "Completa nombre, apellido y telefono.";
+
+  const validate = (payload, excludeId = null) => {
+    if (!payload.nombre.trim() || !payload.apellido.trim() || !payload.telefono.trim() || !payload.email.trim()) {
+      return "Completa nombre, apellido, telefono y email.";
+    }
     if (payload.telefono.trim().length < 8) return "El telefono parece demasiado corto.";
+    const email = payload.email.trim().toLowerCase();
+    if (!emailRegex.test(email)) return "Revisa el formato del email.";
+    const duplicado = data.docentes.some((d) => d.email?.toLowerCase() === email && d.id !== excludeId);
+    if (duplicado) return "Ya existe un docente con ese email.";
     return "";
   };
 
@@ -25,7 +33,13 @@ export function Teachers({ data, setData, pushHistory }) {
       setError(validation);
       return;
     }
-    const nuevo = { id: Date.now(), nombre: form.nombre.trim(), apellido: form.apellido.trim(), telefono: form.telefono.trim() };
+    const nuevo = {
+      id: Date.now(),
+      nombre: form.nombre.trim(),
+      apellido: form.apellido.trim(),
+      telefono: form.telefono.trim(),
+      email: form.email.trim().toLowerCase()
+    };
     const tallerAsignado = data.talleres.find((t) => t.id === Number(form.tallerId));
     setData((prev) => ({
       ...prev,
@@ -39,19 +53,31 @@ export function Teachers({ data, setData, pushHistory }) {
 
   const openProfile = (docente) => {
     setSelected(docente);
-    setEditForm({ nombre: docente.nombre, apellido: docente.apellido, telefono: docente.telefono, tallerId: "" });
+    setEditForm({
+      nombre: docente.nombre,
+      apellido: docente.apellido,
+      telefono: docente.telefono,
+      email: docente.email || "",
+      tallerId: ""
+    });
     setConfirmDelete(false);
     setError("");
   };
 
   const saveTeacher = () => {
     if (!selected) return;
-    const validation = validate(editForm);
+    const validation = validate(editForm, selected.id);
     if (validation) {
       setError(validation);
       return;
     }
-    const updated = { ...selected, nombre: editForm.nombre.trim(), apellido: editForm.apellido.trim(), telefono: editForm.telefono.trim() };
+    const updated = {
+      ...selected,
+      nombre: editForm.nombre.trim(),
+      apellido: editForm.apellido.trim(),
+      telefono: editForm.telefono.trim(),
+      email: editForm.email.trim().toLowerCase()
+    };
     const tallerAsignado = data.talleres.find((t) => t.id === Number(editForm.tallerId));
     setData((prev) => ({
       ...prev,
@@ -86,6 +112,7 @@ export function Teachers({ data, setData, pushHistory }) {
           <Form.Control placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
           <Form.Control placeholder="Apellido" value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })} />
           <Form.Control placeholder="Telefono" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+          <Form.Control type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <Form.Select value={form.tallerId} onChange={(e) => setForm({ ...form, tallerId: e.target.value })}>
             <option value="">Sin taller</option>
             {data.talleres.filter((t) => !t.docenteId).map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
@@ -93,10 +120,18 @@ export function Teachers({ data, setData, pushHistory }) {
           <Button variant="success" type="submit">Registrar</Button>
         </Form>
         <Table responsive hover>
-          <thead><tr><th>Nombre</th><th>Telefono</th><th>Talleres</th><th></th></tr></thead>
+          <thead><tr><th>Nombre</th><th>Email</th><th>Telefono</th><th>Talleres</th><th></th></tr></thead>
           <tbody>
-            {data.docentes.map((d) => <tr key={d.id}><td>{d.nombre} {d.apellido}</td><td>{d.telefono}</td><td>{teacherWorkshops(d.id).map((t) => t.nombre).join(", ") || "-"}</td><td className="text-end"><button type="button" className="table-action is-info" onClick={() => openProfile(d)}>Ver ficha</button></td></tr>)}
-            {!data.docentes.length ? <tr><td colSpan={4}><EmptyState title="Sin docentes" text="Registra el primer docente para asignarlo a un taller." /></td></tr> : null}
+            {data.docentes.map((d) => (
+              <tr key={d.id}>
+                <td>{d.nombre} {d.apellido}</td>
+                <td>{d.email || "-"}</td>
+                <td>{d.telefono}</td>
+                <td>{teacherWorkshops(d.id).map((t) => t.nombre).join(", ") || "-"}</td>
+                <td className="text-end"><button type="button" className="table-action is-info" onClick={() => openProfile(d)}>Ver ficha</button></td>
+              </tr>
+            ))}
+            {!data.docentes.length ? <tr><td colSpan={5}><EmptyState title="Sin docentes" text="Registra el primer docente para asignarlo a un taller." /></td></tr> : null}
           </tbody>
         </Table>
       </Card.Body></Card>
@@ -109,6 +144,7 @@ export function Teachers({ data, setData, pushHistory }) {
               <Col md={5}>
                 <Card><Card.Body>
                   <h3>Ficha</h3>
+                  <p>Email: <strong>{selected.email || "-"}</strong></p>
                   <p>Telefono: <strong>{selected.telefono}</strong></p>
                   <p>Talleres: <strong>{teacherWorkshops(selected.id).length}</strong></p>
                   <div className="modal-actions justify-content-start">
@@ -124,6 +160,7 @@ export function Teachers({ data, setData, pushHistory }) {
                     <Form.Control placeholder="Nombre" value={editForm.nombre} onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })} />
                     <Form.Control placeholder="Apellido" value={editForm.apellido} onChange={(e) => setEditForm({ ...editForm, apellido: e.target.value })} />
                     <Form.Control placeholder="Telefono" value={editForm.telefono} onChange={(e) => setEditForm({ ...editForm, telefono: e.target.value })} />
+                    <Form.Control type="email" placeholder="Email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
                     <Form.Select value={editForm.tallerId} onChange={(e) => setEditForm({ ...editForm, tallerId: e.target.value })}>
                       <option value="">No asignar nuevo taller</option>
                       {data.talleres.filter((t) => !t.docenteId).map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
