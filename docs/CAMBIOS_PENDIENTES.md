@@ -2,275 +2,283 @@
 
 Documento de mejoras acordadas para alinear el frontend con el backend real y el flujo de autenticación definido en `back/back_talleres_municipales/DECISIONS.md`.
 
-**Estado actual:** versión demo con datos en memoria (`demoData.js`), login simulado y registro abierto por rol.
+**Estado actual:** versión demo con datos en memoria (`demoData.js`). Login simulado con registro abierto por rol (pendiente de refactor).
 
-**Objetivo:** preparar el front para integrarse con la API y respetar el sistema cerrado (sin registro público).
+**Objetivo:** preparar el front para integrarse con la API y respetar el sistema cerrado (sin registro público), con textos claros para el usuario final.
 
 ---
 
 ## Resumen de cambios
 
-| # | Cambio | Prioridad | Archivos principales |
-|---|--------|-----------|----------------------|
-| 1 | Agregar email en gestión de docentes | Alta | `Teachers.jsx`, `demoData.js` |
-| 2 | Reemplazar "Registro" por "Activar cuenta" | Alta | `LoginScreen.jsx` |
-| 3 | Conectar login y activación al backend | Alta | `LoginScreen.jsx`, nuevo `api/` o servicios |
-| 4 | Gestión de cuentas admin (varias cuentas + baja) | Media | Nueva vista `AdminUsers.jsx`, `App.jsx` |
-| 5 | Indicador de cuenta activada en docentes/alumnos | Media | `Teachers.jsx`, `StudentProfile.jsx` |
-| 6 | Mantener demo provisoria para desarrollo | Baja | `LoginScreen.jsx`, `demoData.js` |
+| # | Cambio | Estado | Prioridad |
+|---|--------|--------|-----------|
+| 1 | Email en gestión de docentes | ✅ Hecho | — |
+| 2 | Varios horarios por taller (hasta 3 por día) | ✅ Hecho | — |
+| 3 | Pantalla auth: **Ingresar** + **Registrarse** | ✅ Hecho (UI) | — |
+| 4 | Lógica demo de registro cerrado (sin rol ni nombre) | Pendiente | Alta |
+| 5 | Recordatorio de contacto Punto Digital | ✅ Hecho | — |
+| 6 | Indicador cuenta activa / pendiente (docentes y alumnos) | Pendiente | Media |
+| 7 | Gestión de cuentas admin (vista referente) | Pendiente | Media |
+| 8 | Integración auth con backend (JWT, API) | Pendiente | Alta (cuando exista API) |
+| 9 | Modo demo acotado (`VITE_USE_DEMO_AUTH`) | Pendiente | Baja |
 
 ---
 
-## 1. Email en docentes
+## ✅ Completado
 
-### Situación actual
+### 1. Email en docentes
 
-- **Alumnos:** ya tienen campo email en alta, tabla, búsqueda y ficha (`Students.jsx`, `StudentProfile.jsx`).
-- **Docentes:** solo nombre, apellido y teléfono (`Teachers.jsx`). Los datos demo tampoco incluyen email.
+- Campo email en alta, edición, tabla y ficha (`Teachers.jsx`).
+- Validación de formato y duplicados.
+- Emails en `demoData.js` (Paula Herrera → `paula.herrera@punto.digital`).
 
-### Por qué hace falta
+### 2. Varios horarios por taller
 
-El flujo de activación del backend exige que el admin cargue el email del docente **antes** de que esa persona pueda crear su usuario:
-
-```
-Admin registra docente (con email)  →  docente existe, sin usuario
-Docente va a Activar cuenta         →  se crea usuario vinculado al docente
-```
-
-Sin email en el formulario de docentes, el docente nunca podría activar su cuenta.
-
-### Cambios a realizar
-
-**`front/src/views/Teachers.jsx`**
-
-- [ ] Agregar `email` a `emptyForm` y `editForm`.
-- [ ] Campo email en formulario de alta (toolbar).
-- [ ] Campo email en modal de edición.
-- [ ] Validación de formato (misma regex que en `Students.jsx`).
-- [ ] Validar que no se repita email entre docentes.
-- [ ] Mostrar email en la tabla de docentes (nueva columna).
-- [ ] Mostrar email en la ficha del docente.
-- [ ] Opcional: badge **Cuenta activada** / **Pendiente de activación** (cuando exista integración con backend).
-
-**`front/src/data/demoData.js`**
-
-- [ ] Agregar email a cada docente demo (ej. `paula.herrera@punto.digital` para id 1).
-- [ ] Alinear el email del docente demo con `demoUsers` (Paula Herrera → `docenteId: 1`).
-
-### Referencia backend
-
-Ver `DECISIONS.md` → *Flujo de creación de cuentas (dos pasos)*.
-
-> Nota: conviene agregar `email` al modelo `Docente` en el backend si aún no está (hay una inconsistencia en `DECISIONS.md`: la tabla de campos no lo lista, pero el flujo de activación sí lo requiere).
+- Formulario con hasta **3 turnos por día** (`WorkshopForm.jsx`).
+- Datos demo con ejemplos de doble turno.
+- Ordenamiento por día y hora en `formatters.js`.
 
 ---
 
-## 2. Login: de "Registro" a "Activar cuenta"
+## Autenticación — decisiones de UX y flujo
 
-### Situación actual
+### Nombres en pantalla (no usar "Activar cuenta")
 
-`LoginScreen.jsx` tiene dos pestañas:
+| Pestaña | Texto visible | Uso real |
+|---------|---------------|----------|
+| Tab 1 | **Ingresar** | Email + contraseña. Usuario que ya completó su acceso. |
+| Tab 2 | **Registrarse** | Primera vez: email + contraseña + confirmar. Por detrás es activación/registro cerrado. |
 
-- **Login:** email + contraseña (correcto para producción).
-- **Registro:** nombre, email, contraseña y **selector de rol** (Administrador / Docente / Alumno).
+**Título pestaña Registrarse:** "Crear tu acceso" o "Registrarte por primera vez".
 
-El registro actual es abierto: cualquiera puede crear una cuenta con cualquier rol. Eso es solo para la demo.
+**Subtítulo:**
+> Si Punto Digital ya cargó tus datos, completá tu email y elegí una contraseña.
 
-### Por qué cambiar
-
-El sistema es **cerrado**: nadie se registra libremente. Solo pueden activar cuenta quienes el admin ya cargó en docentes o alumnos.
-
-Los administradores **no** usan activación: sus cuentas se crean por seed o por el referente del área (ver sección 4).
-
-### Cambios a realizar
-
-**`front/src/components/LoginScreen.jsx`**
-
-- [ ] Renombrar pestaña "Registro" → **"Activar cuenta"**.
-- [ ] Quitar campos: nombre, selector de rol.
-- [ ] Formulario de activación: **email** + **contraseña nueva** + **confirmar contraseña**.
-- [ ] Mensajes de error alineados con el backend:
-  - "Email no registrado en el sistema"
-  - "La cuenta ya fue activada"
-  - "Las contraseñas no coinciden"
-- [ ] Mantener botones de acceso rápido demo **solo en desarrollo** (opcional: ocultar con variable de entorno).
-- [ ] Eliminar la lógica que crea usuarios en memoria con rol elegido (`submitRegister` actual).
-
-### Flujo esperado (producción)
-
-```
-Usuario ingresa email + elige contraseña
-  → POST /auth/activar
-  → Backend valida email en docentes/alumnos
-  → Crea usuario y vincula docente_id o alumno_id
-  → Redirige a login o inicia sesión directamente
-```
+**Recordatorio al pie (ambas pestañas o solo Registrarse):**
+> **Recordá:** para ingresar o registrarte tenés que estar previamente cargado/a por Punto Digital.  
+> Consultas: **2604-000000** · cultura@sanrafael.gob.ar *(reemplazar por contacto real)*
 
 ---
 
-## 3. Integración con el backend (auth)
+### Sistema cerrado — quién puede registrarse
 
-### Situación actual
+Nadie elige rol ni completa nombre/apellido en el registro. El sistema deduce el rol según dónde exista el email.
 
-El login busca credenciales en `demoUsers` (array en memoria). No hay llamadas a la API.
+| Rol | ¿Quién lo precarga? | ¿Usa Registrarse? | ¿Qué pasa por detrás? |
+|-----|---------------------|-------------------|------------------------|
+| **Docente** | Admin en vista Docentes (con email) | Sí | Se crea `usuario` vinculado a `docente_id` |
+| **Alumno** | Admin en vista Alumnos (con email) | Sí | Se crea `usuario` vinculado a `alumno_id` |
+| **Admin nuevo** | Referente en vista Usuarios del sistema | Sí | `usuario` admin ya existe sin contraseña → se completa en Registrarse |
+| **Admin inicial (seed)** | Instalación / `.env` | **No** | Entra directo por **Ingresar** con pass inicial |
 
-### Cambios a realizar
+### Flujo por rol
 
-- [ ] Crear capa de servicios API (ej. `front/src/api/auth.js` o `services/auth.js`).
-- [ ] `POST /auth/login` — email + password → JWT + datos del usuario.
-- [ ] `POST /auth/activar` — email + password → crea cuenta vinculada.
-- [ ] Guardar token (sessionStorage o localStorage; definir estrategia).
-- [ ] Enviar token en headers de requests protegidas.
-- [ ] Manejar expiración / cierre de sesión.
-- [ ] Mantener modo demo: flag `VITE_USE_DEMO_AUTH=true` para seguir probando sin backend.
+```
+DOCENTE / ALUMNO
+  Admin carga perfil (nombre, apellido, email, …)
+    → persona va a Registrarse
+    → email + contraseña + confirmar
+    → sistema crea usuario y vincula perfil
+    → puede usar Ingresar
 
-### Estado de sesión
+ADMIN NUEVO (creado por referente)
+  Referente crea cuenta (email + nombre, SIN contraseña)
+    → persona va a Registrarse
+    → email + contraseña + confirmar
+    → sistema guarda contraseña en usuario admin existente
+    → puede usar Ingresar
 
-Tras login exitoso, el front debe conocer:
+ADMIN INICIAL (seed)
+  Instalación crea usuario con pass en .env
+    → entra por Ingresar
+    → cambia contraseña en primer acceso (futuro)
+```
 
-| Campo | Uso |
-|-------|-----|
-| `rol` | Mostrar menú y vistas por rol |
-| `docente_id` | Vincular sesión docente con sus talleres |
-| `alumno_id` | Vincular sesión alumno con sus inscripciones |
-| `nombre` | Mostrar en header / perfil |
+### Mensajes de error (Registrarse)
+
+| Situación | Mensaje |
+|-----------|---------|
+| Email no está en docentes, alumnos ni admins pendientes | "Email no registrado en el sistema. Contactá a Punto Digital." |
+| Email ya tiene cuenta activa | "Este email ya tiene acceso. Usá Ingresar." |
+| Contraseñas no coinciden | "Las contraseñas no coinciden." |
+| Contraseña &lt; 6 caracteres | "La contraseña debe tener al menos 6 caracteres." |
+
+### Mensajes de error (Ingresar)
+
+| Situación | Mensaje |
+|-----------|---------|
+| Credenciales incorrectas | "Email o contraseña incorrectos." |
+| Cuenta desactivada | "Tu cuenta fue desactivada. Contactá a Punto Digital." |
+| Cuenta sin completar registro | "Completá tu acceso en Registrarse." *(admin pendiente sin pass)* |
 
 ---
 
-## 4. Gestión de cuentas administrador
+## 3. Pantalla Ingresar + Registrarse
+
+### ✅ Completado (Paso A — UI)
+
+- Pestañas **Ingresar** / **Registrarse**.
+- Ingresar: email + contraseña + botones demo provisorios.
+- Registrarse: email + contraseña + confirmar contraseña (sin nombre ni rol).
+- Subtítulo contextual en cada pestaña.
+- Recordatorio de contacto Punto Digital (`.auth-reminder`).
+- Validación cliente en Registrarse (longitud, coincidencia, email ya activo en demo).
+
+### Pendiente (Paso B — lógica demo)
+
+- [ ] Lógica de registro cerrado contra docentes/alumnos/admins pendientes (ver sección 4).
+
+**Formulario Registrarse — campos**
+
+| Campo | Obligatorio |
+|-------|-------------|
+| Email | Sí |
+| Contraseña | Sí (mín. 6) |
+| Confirmar contraseña | Sí |
+
+---
+
+## 4. Lógica demo de registro cerrado (pendiente)
+
+Mientras no exista backend, simular el flujo en memoria.
+
+### Fuentes de datos
+
+| Fuente | Uso |
+|--------|-----|
+| `data.docentes` | Email precargado → rol Docente |
+| `data.alumnos` | Email precargado → rol Alumno |
+| `demoUsers` / `data.usuariosPendientes` | Admins precargados por referente (sin pass) |
+| `demoUsers` (con password) | Cuentas ya activadas → solo Ingresar |
+
+### Algoritmo demo (Registrarse)
+
+```
+1. Normalizar email
+2. Si ya existe en demoUsers con password → error "ya tiene acceso"
+3. Si existe en docentes sin usuario → crear usuario Docente + docenteId
+4. Si existe en alumnos sin usuario → crear usuario Alumno + alumnoId
+5. Si existe en usuariosPendientes admin → completar password
+6. Si no existe en ningún lado → error + recordatorio contacto
+```
+
+### Cambios en archivos
+
+- [ ] `demoData.js`: array `usuariosPendientes` (admins creados por referente, sin password).
+- [ ] `App.jsx`: pasar `data` a `LoginScreen` para validar emails en docentes/alumnos.
+- [ ] `App.jsx`: persistir nuevos usuarios activados en estado (o `localStorage` para demo).
+- [ ] Helper `utils/auth.js` con `loginDemo()` y `registerDemo()`.
+
+---
+
+## 5. Indicador cuenta activa / pendiente (pendiente)
+
+- [ ] Ficha docente (`Teachers.jsx`): badge según si email tiene usuario activo.
+- [ ] Ficha alumno (`StudentProfile.jsx`): mismo badge.
+- [ ] Demo: cruzar email con `demoUsers` / usuarios en sesión.
+
+---
+
+## 6. Gestión de cuentas administrador (pendiente)
 
 ### Decisión acordada
 
-- **No** usar una sola cuenta compartida para los ~4 admins de Punto Digital.
-- **Sí** usar una cuenta individual por persona.
-- **Un referente** del área gestiona altas y bajas de cuentas admin.
-- Si alguien renuncia o lo echan: **desactivar su cuenta** (`activo = false`), no cambiar contraseñas de todos.
+- **No** cuenta compartida para los ~4 admins de Punto Digital.
+- **Sí** cuenta individual por persona.
+- **Un referente** gestiona altas y bajas.
+- Baja = `activo = false` (no cambiar contraseñas de todos).
+- **Admins nuevos** creados por referente **sí usan Registrarse** (referente no define su contraseña).
 
-### Por qué no una cuenta única
-
-| Problema | Con cuenta compartida |
-|----------|----------------------|
-| Auditoría | No se sabe quién hizo cada acción |
-| Alguien se va | Hay que cambiar la pass de todos |
-| Riesgo | Un ex-empleado puede cambiar la pass y bloquear al equipo |
-| Seguridad | Cuatro personas conocen la misma credencial |
-
-### Bootstrap del primer admin (backend)
-
-La primera cuenta admin se crea al instalar el sistema:
-
-- Email y contraseña inicial vienen de variables de entorno (`.env`), **no** hardcodeadas en código.
-- El backend hashea la contraseña y la guarda en `usuarios`.
-- El referente cambia la contraseña en el primer acceso.
+### Bootstrap primer admin (backend, futuro)
 
 ```env
-# .env (ejemplo — no commitear valores reales)
 ADMIN_EMAIL=admin@cultura.gob.ar
 ADMIN_INITIAL_PASSWORD=cambiar-en-primer-despliegue
 ```
 
-### Cambios a realizar en el front
+Ese admin entra por **Ingresar**, no por Registrarse.
 
-**Nueva vista: gestión de usuarios admin** (solo para referente)
+### Front pendiente
 
-- [ ] Crear vista `AdminUsers.jsx` (o sección en configuración).
-- [ ] Listar usuarios con rol `Administrador`.
-- [ ] Alta: email + nombre (sin contraseña — la persona la elige al activar, o se envía pass temporal).
-- [ ] Acción **Desactivar / Activar** cuenta.
-- [ ] Mostrar estado: activo / inactivo.
-- [ ] Restringir acceso: solo admins con permiso `puede_gestionar_usuarios` (referente).
-
-**`App.jsx`**
-
-- [ ] Agregar ruta/menú "Usuarios del sistema" (visible solo para referente admin).
-- [ ] Ocultar para docentes y alumnos.
-
-### Flujo operativo (equipo Punto Digital)
-
-```
-1. Instalación → seed crea cuenta del referente
-2. Referente entra → crea cuentas de los otros 3 admins
-3. Cada uno activa / define su contraseña
-4. Alguien se va → referente desactiva esa cuenta
-5. Entra alguien nuevo → referente crea cuenta nueva
-```
+- [ ] Vista `AdminUsers.jsx` (solo referente).
+- [ ] Alta admin: email + nombre (sin contraseña).
+- [ ] Desactivar / activar cuenta.
+- [ ] Menú en `App.jsx`: "Usuarios del sistema".
 
 ---
 
-## 5. Indicador de cuenta activada (docentes y alumnos)
+## 7. Integración backend (pendiente — cuando exista API)
 
-### Situación actual
-
-No se muestra si un docente o alumno ya activó su cuenta de acceso al sistema.
-
-### Cambios a realizar
-
-- [ ] En ficha de docente: badge **Cuenta activa** / **Pendiente de activación**.
-- [ ] En ficha de alumno (`StudentProfile.jsx`): mismo indicador.
-- [ ] Fuente del dato: backend (existencia de `usuario` vinculado con `activo = true`).
-- [ ] En demo: simular con flag local o cruzar con `demoUsers` por email.
+- [ ] `front/src/api/auth.js` — `POST /auth/login`, `POST /auth/registrar` (o `/auth/activar`).
+- [ ] JWT en sessionStorage/localStorage.
+- [ ] `VITE_USE_DEMO_AUTH=true` para seguir sin backend en desarrollo.
 
 ---
 
-## 6. Demo provisoria (mantener durante desarrollo)
+## Próxima implementación en front (sin backend)
 
-Mientras el backend no esté listo, conviene conservar la capacidad de probar vistas por rol.
+Orden propuesto para el siguiente PR / sesión de trabajo:
 
-### Recomendación
+### ~~Paso A~~ — `LoginScreen.jsx` + estilos ✅
+1. ~~Pestañas **Ingresar** / **Registrarse**.~~
+2. ~~Formulario Registrarse: email + pass + confirmar (sin nombre ni rol).~~
+3. ~~Subtítulo + recordatorio de contacto Punto Digital.~~
+4. ~~Mensajes de error de validación cliente.~~
 
-- Variable `VITE_USE_DEMO_AUTH=true` en `.env.local` del front.
-- Si está activa: botones de acceso rápido (Administrador / Docente / Alumno) y `demoUsers`.
-- Si está inactiva: solo login real y activación contra API.
+### Paso B — Lógica demo (siguiente)
+5. Crear `utils/auth.js` con validación de registro cerrado.
+6. Pasar `data` desde `App.jsx` a `LoginScreen`.
+7. Agregar `usuariosPendientes` en `demoData.js` (ej. un admin sin activar).
+8. Persistir usuarios registrados en la sesión demo.
 
-Los botones provisorios y el registro abierto **no deben ir a producción**.
+### Paso C — Indicadores
+9. Badge "Cuenta activa" / "Pendiente" en ficha docente y alumno.
+
+### No incluido en esta tanda (requiere backend o más alcance)
+- Vista `AdminUsers.jsx`.
+- Conexión real a API.
+- Ocultar botones demo con variable de entorno (opcional en Paso A).
 
 ---
 
 ## Checklist por archivo
 
 ### `LoginScreen.jsx`
-- [ ] Pestaña Activar cuenta (reemplaza Registro)
-- [ ] Quitar selector de rol y registro abierto
-- [ ] Integrar `POST /auth/login` y `POST /auth/activar`
-- [ ] Botones demo condicionados a entorno
+- [x] Ingresar / Registrarse (UX)
+- [x] Registro sin rol ni nombre (UI)
+- [x] Recordatorio contacto
+- [x] Validación cliente (pass, confirmar, email ya activo)
+- [ ] Lógica demo registro cerrado (Paso B)
+- [ ] API (futuro)
 
 ### `Teachers.jsx`
-- [ ] Campo email (alta, edición, tabla, ficha)
-- [ ] Validación de email
-- [ ] Indicador cuenta activada (cuando haya API)
+- [x] Email (alta, edición, tabla, ficha)
+- [ ] Badge cuenta activada
 
-### `Students.jsx` / `StudentProfile.jsx`
-- [ ] Indicador cuenta activada (email ya existe)
-- [ ] Sin cambios estructurales en email de alumnos
+### `WorkshopForm.jsx`
+- [x] Múltiples horarios por día
+
+### `StudentProfile.jsx`
+- [ ] Badge cuenta activada
 
 ### `demoData.js`
-- [ ] Email en docentes demo
-- [ ] Coherencia con `demoUsers`
+- [x] Email en docentes
+- [ ] `usuariosPendientes` para demo de admin
 
 ### `App.jsx`
-- [ ] Ruta y menú "Usuarios del sistema" (referente)
-- [ ] Protección de rutas según rol y permisos
+- [ ] Pasar data a LoginScreen
+- [ ] Menú Usuarios del sistema (futuro)
 
-### Nuevo: `AdminUsers.jsx` + `api/auth.js`
-- [ ] Vista gestión admins
-- [ ] Servicios de autenticación
-
----
-
-## Orden sugerido de implementación
-
-1. **Email en docentes** — cambio local, no depende del backend.
-2. **Activar cuenta en login** — UI lista antes de conectar API.
-3. **Integración auth con backend** — cuando existan endpoints.
-4. **Gestión de admins** — cuando exista endpoint de usuarios.
-5. **Indicadores de activación** — cuando el backend devuelva estado de cuenta.
+### Nuevos
+- [ ] `utils/auth.js`
+- [ ] `AdminUsers.jsx` (futuro)
+- [ ] `api/auth.js` (futuro)
 
 ---
 
 ## Referencias
 
-- Backend: `back/back_talleres_municipales/DECISIONS.md` (autenticación, roles, activación, modelo `Usuario`)
-- Demo actual: `front/README.md` (usuarios de prueba)
-- Alumnos con email: `front/src/views/Students.jsx`
-- Docentes sin email: `front/src/views/Teachers.jsx`
+- Backend: `back/back_talleres_municipales/DECISIONS.md`
+- Demo usuarios: `front/README.md`
 - Login actual: `front/src/components/LoginScreen.jsx`
+- Docentes: `front/src/views/Teachers.jsx`
