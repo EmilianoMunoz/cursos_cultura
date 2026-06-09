@@ -56,6 +56,12 @@ function eventText(h, alumnoName, tallerName) {
     if (anterior.estado !== "Finalizado" && nuevo.estado === "Finalizado") return `${usuario} finalizo el taller ${nombre}.`;
     return `${usuario} modifico ${changedFields(anterior, nuevo).map((f) => f.label).join(", ") || "datos"} de ${nombre}.`;
   }
+  if (h.entidad === "SolicitudInscripcion") {
+    const nombre = nuevo.nombre || anterior.nombre || "una persona";
+    const taller = nuevo.tallerNombre || anterior.tallerNombre || "un taller";
+    if (h.operacion === "UPDATE") return `${usuario} marco la solicitud de ${nombre} para ${taller} como ${nuevo.estado}.`;
+    return `${usuario} registro una solicitud de ${nombre} para ${taller}.`;
+  }
   if (h.entidad === "Inscripcion") return `${usuario} registro una inscripcion de ${alumnoName(nuevo.alumnoId || anterior.alumnoId)} en ${tallerName(nuevo.tallerId || anterior.tallerId)}.`;
   return `${usuario} registro una accion sobre ${h.entidad}.`;
 }

@@ -9,9 +9,11 @@ import { initialData } from "./data/demoData.js";
 import { Attendance } from "./views/Attendance.jsx";
 import { AuditLog } from "./views/AuditLog.jsx";
 import { Dashboard } from "./views/Dashboard.jsx";
+import { EnrollmentRequests } from "./views/EnrollmentRequests.jsx";
 import { Reports } from "./views/Reports.jsx";
 import { Students } from "./views/Students.jsx";
 import { AdminUsers } from "./views/AdminUsers.jsx";
+import { PublicCourses } from "./views/PublicCourses.jsx";
 import { Teachers } from "./views/Teachers.jsx";
 import { WorkshopManagement } from "./views/WorkshopManagement.jsx";
 import { Workshops } from "./views/Workshops.jsx";
@@ -34,6 +36,7 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmFinalize, setConfirmFinalize] = useState(null);
   const [searchNotice, setSearchNotice] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
 
   const role = currentUser?.role || "Administrador";
   const allowed = permisosUsuario(currentUser);
@@ -85,17 +88,6 @@ export default function App() {
         ? "asistencia"
         : "dashboard";
     setView(nextView);
-  };
-
-  const register = ({ user, source, pendienteId }) => {
-    setData((prev) => ({
-      ...prev,
-      usuarios: [...prev.usuarios, user],
-      usuariosPendientes: source === "admin-pendiente"
-        ? prev.usuariosPendientes.filter((u) => u.id !== pendienteId)
-        : prev.usuariosPendientes
-    }));
-    login(user);
   };
 
   const saveWorkshop = (workshop) => {
@@ -172,7 +164,46 @@ export default function App() {
     XLSX.writeFile(wb, "reporte-punto-digital.xlsx");
   };
 
-  if (!currentUser) return <LoginScreen data={data} onLogin={login} onRegister={register} />;
+  const publicRequest = (taller, solicitud) => {
+    const nueva = {
+      id: Date.now(),
+      fechaHora: new Date().toISOString(),
+      tallerId: taller.id,
+      tallerNombre: taller.nombre,
+      estado: "Pendiente",
+      ...solicitud
+    };
+    setData((prev) => ({
+      ...prev,
+      solicitudesInscripcion: [nueva, ...(prev.solicitudesInscripcion || [])],
+      historial: [
+        {
+          id: Date.now() + Math.random(),
+          fechaHora: nueva.fechaHora,
+          usuario: "Pagina publica",
+          rol: "Publico",
+          entidad: "SolicitudInscripcion",
+          operacion: "CREATE",
+          anterior: null,
+          nuevo: nueva
+        },
+        ...prev.historial
+      ]
+    }));
+  };
+
+  if (!currentUser) {
+    return (
+      <>
+        <PublicCourses data={data} docenteName={docenteName} onLoginClick={() => setShowLogin(true)} onRequest={publicRequest} />
+        <Modal show={showLogin} onHide={() => setShowLogin(false)} size="lg" centered className="auth-modal">
+          <Modal.Body className="p-0">
+            <LoginScreen data={data} onLogin={(user) => { login(user); setShowLogin(false); }} embedded />
+          </Modal.Body>
+        </Modal>
+      </>
+    );
+  }
 
   const openStudentFromSearch = (value) => {
     const q = value.trim().toLowerCase();
@@ -230,6 +261,7 @@ export default function App() {
           {view === "dashboard" && <Dashboard data={data} role={role} currentUser={currentUser} visibleTalleres={visibleTalleres} visibleAlumnos={visibleAlumnos} selectedDate={selectedDate} docenteName={docenteName} setView={setView} />}
           {view === "talleres" && <Workshops data={data} talleres={visibleTalleres} selectedDate={selectedDate} setSelectedDate={setSelectedDate} query={workshopQuery} setQuery={setWorkshopQuery} docenteName={docenteName} role={role} currentUser={currentUser} />}
           {view === "gestionTalleres" && <WorkshopManagement data={data} docenteName={docenteName} selectedDate={selectedDate} onCreate={() => setWorkshopModal({ show: true, taller: null })} onEdit={(taller) => setWorkshopModal({ show: true, taller })} onFinalize={setConfirmFinalize} onDelete={setConfirmDelete} />}
+          {view === "solicitudes" && <EnrollmentRequests data={data} setData={setData} pushHistory={pushHistory} visibleTalleres={visibleTalleres} role={role} />}
           {view === "docentes" && <Teachers data={data} setData={setData} pushHistory={pushHistory} />}
           {view === "alumnos" && <Students data={data} visibleAlumnos={visibleAlumnos} visibleTalleres={visibleTalleres} query={studentQuery} setQuery={setStudentQuery} setData={setData} pushHistory={pushHistory} openStudent={setStudentModal} />}
           {view === "asistencia" && <Attendance data={data} setData={setData} visibleTalleres={visibleTalleres} selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTaller={selectedAttendanceTaller} setSelectedTaller={setSelectedAttendanceTaller} pushHistory={pushHistory} />}

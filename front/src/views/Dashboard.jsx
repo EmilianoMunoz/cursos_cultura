@@ -9,6 +9,8 @@ export function Dashboard({ data, role, currentUser, visibleTalleres, visibleAlu
   const activos = visibleTalleres.filter((t) => t.estado === "Activo");
   const talleresDelDia = activos.filter((t) => tallerTieneClaseEnFecha(t, selectedDate));
   const pendientes = talleresConAsistenciaPendiente(data, currentUser, selectedDate);
+  const visibleTallerIds = new Set(visibleTalleres.map((t) => t.id));
+  const solicitudesPendientes = (data.solicitudesInscripcion || []).filter((s) => s.estado === "Pendiente" && visibleTallerIds.has(s.tallerId));
   const sinDocente = data.talleres.filter((t) => t.estado === "Activo" && !t.docenteId);
   const registros = data.asistencias.filter((a) => a.fecha === selectedDate);
   const presentes = registros.filter((r) => normalizarEstado(r.estadoAsistencia) === "Presente").length;
@@ -22,6 +24,7 @@ export function Dashboard({ data, role, currentUser, visibleTalleres, visibleAlu
     return ins > 0 && regs >= ins;
   };
   const actions = [
+    ...((role === "Administrador" || role === "Docente") && solicitudesPendientes.length ? [{ label: "Solicitudes de inscripcion sin revisar", meta: `${solicitudesPendientes.length} nuevas`, view: "solicitudes" }] : []),
     ...pendientes.slice(0, 5).map((t) => ({ label: `${t.nombre}: asistencia pendiente`, meta: `${data.inscripciones.filter((i) => i.tallerId === t.id && i.estado === "Activo").length} alumnos`, view: "asistencia" })),
     ...(role === "Administrador" ? sinDocente.slice(0, 4).map((t) => ({ label: `${t.nombre}: sin docente`, meta: t.distrito, view: "gestionTalleres" })) : [])
   ];
@@ -47,7 +50,7 @@ export function Dashboard({ data, role, currentUser, visibleTalleres, visibleAlu
           <Row className="g-3 mt-2">
             <Col md={3}><StatCard label="Asistencia al dia" value={`${talleresDelDia.length - pendientes.length}/${talleresDelDia.length || 0}`} sub={`${pendientes.length} pendientes`} variant={pendientes.length ? "warning" : "success"} /></Col>
             <Col md={3}><StatCard label="Alumnos visibles" value={visibleAlumnos.length} /></Col>
-            <Col md={3}><StatCard label="Talleres activos" value={activos.length} variant="success" /></Col>
+            <Col md={3}><StatCard label={role === "Administrador" || role === "Docente" ? "Solicitudes nuevas" : "Talleres activos"} value={role === "Administrador" || role === "Docente" ? solicitudesPendientes.length : activos.length} variant={(role === "Administrador" || role === "Docente") && solicitudesPendientes.length ? "warning" : "success"} /></Col>
             <Col md={3}><StatCard label={role === "Administrador" ? "Sin docente" : "Presentes hoy"} value={role === "Administrador" ? sinDocente.length : presentes} variant={role === "Administrador" && sinDocente.length ? "danger" : "success"} /></Col>
           </Row>
         </Card.Body>
@@ -96,6 +99,7 @@ export function Dashboard({ data, role, currentUser, visibleTalleres, visibleAlu
             </div>
             <div className="alert-list">
               <div className={`soft-alert ${pendientes.length ? "is-warn" : "is-ok"}`}>{pendientes.length ? `Hay ${pendientes.length} taller/es con asistencia pendiente.` : "Asistencias del dia completas."}</div>
+              {solicitudesPendientes.length && (role === "Administrador" || role === "Docente") ? <button type="button" className="soft-alert is-warn soft-alert-button" onClick={() => setView("solicitudes")}>{solicitudesPendientes.length} solicitud/es de inscripcion sin revisar.</button> : null}
               {sinDocente.length && role === "Administrador" ? <div className="soft-alert is-danger">{sinDocente.length} taller/es activo/s sin docente asignado.</div> : null}
               {pendientesPorDistrito.map((d) => <div className="soft-alert is-warn" key={d.distrito}>{d.distrito}: {d.pendientes} taller/es pendientes.</div>)}
             </div>

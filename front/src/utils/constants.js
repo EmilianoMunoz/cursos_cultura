@@ -1,6 +1,6 @@
 export const permissions = {
-  Administrador: ["dashboard", "talleres", "gestionTalleres", "docentes", "alumnos", "asistencia", "reportes", "historial"],
-  Docente: ["dashboard", "talleres", "alumnos", "asistencia", "reportes"],
+  Administrador: ["dashboard", "talleres", "gestionTalleres", "solicitudes", "docentes", "alumnos", "asistencia", "reportes", "historial"],
+  Docente: ["dashboard", "talleres", "solicitudes", "alumnos", "asistencia", "reportes"],
   Alumno: ["talleres"]
 };
 
@@ -10,6 +10,7 @@ export const views = [
   ["dashboard", "Tablero"],
   ["talleres", "Talleres"],
   ["gestionTalleres", "Gestion talleres"],
+  ["solicitudes", "Solicitudes"],
   ["docentes", "Docentes"],
   ["alumnos", "Alumnos"],
   ["asistencia", "Asistencia"],

@@ -22,7 +22,7 @@ export function loginDemo(data, email, password) {
   if (!user) {
     const pendiente = (data.usuariosPendientes || []).find((u) => normalizeEmail(u.email) === normalized && u.activo !== false);
     if (pendiente) {
-      return { ok: false, error: "Completá tu acceso en Registrarse." };
+      return { ok: false, error: "Tu acceso esta pendiente. Contactá al equipo de Cultura." };
     }
     return { ok: false, error: "Email o contraseña incorrectos." };
   }

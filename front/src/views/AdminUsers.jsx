@@ -107,7 +107,7 @@ export function AdminUsers({ data, setData, pushHistory, currentUser }) {
         </div>
       </div>
       <p className="text-muted mb-3">
-        Crea cuentas de administrador común. La persona completa su acceso en Registrarse con el email que cargues acá.
+        Crea cuentas de administrador común y dejalas registradas para que el equipo de Cultura entregue las credenciales.
       </p>
       {error ? <Alert variant="danger" className="py-2">{error}</Alert> : null}
       <Form onSubmit={submit} className="toolbar-form mb-3">

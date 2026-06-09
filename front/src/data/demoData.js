@@ -28,7 +28,7 @@ export const usuariosIniciales = [
   { id: 3, nombre: "Ana Gomez", email: "ana.gomez@punto.digital", password: "alumno123", role: "Alumno", alumnoId: 1, activo: true }
 ];
 
-/** Admin creado por referente, pendiente de elegir contraseña en Registrarse. */
+/** Admin creado por referente, pendiente de entrega de credenciales. */
 export const usuariosPendientes = [
   { id: 101, nombre: "Maria Lopez", email: "maria.lopez@punto.digital", role: "Administrador", activo: true, puedeGestionarUsuarios: false }
 ];
@@ -186,6 +186,7 @@ export const initialData = {
   alumnos,
   inscripciones,
   asistencias,
+  solicitudesInscripcion: [],
   historial: [],
   usuarios: [...usuariosIniciales],
   usuariosPendientes: [...usuariosPendientes]
